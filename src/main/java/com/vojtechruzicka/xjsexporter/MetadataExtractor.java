@@ -19,13 +19,31 @@ public class MetadataExtractor {
         File inputFile = new File(filePath);
         Document doc = Jsoup.parse(inputFile, "UTF-8", "", Parser.xmlParser());
 
-        Map<String, Person> people = getPeople(doc);
+        Map<String, Person> persons = getPersons(doc);
         Map<String, Category> categories = getCategories(doc);
+        Map<String, Attachment> attachments = getAttachments(doc);
 
-        return new Metadata(people, categories);
+        return new Metadata(persons, categories, attachments);
     }
 
-    private Map<String, Person> getPeople(Document doc) {
+    private Map<String, Attachment> getAttachments(Document doc) {
+
+        Map<String, Attachment> attachments = new HashMap<>();
+
+        doc.select("attachments > attachment").forEach(attachmentElement -> {
+            String id = attachmentElement.attr("id");
+            Element locationElement = attachmentElement.selectFirst("location");
+
+            String location = locationElement != null ? locationElement.text() : null;
+
+            Attachment attachment = new Attachment(id, location);
+            attachments.put(id, attachment);
+        });
+
+        return attachments;
+    }
+
+    private Map<String, Person> getPersons(Document doc) {
 
         Map<String, Person> persons = new HashMap<>();
 
