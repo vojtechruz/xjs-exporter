@@ -1,5 +1,6 @@
 package com.vojtechruzicka.xjsexporter;
 
+import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,8 +27,10 @@ public class Extractor {
     @ShellMethod(value = "Extracts something", key = "extract")
     public String extract() {
 
-        List<Entry> entries = new ArrayList<>();
+        // TODO extract as json also
 
+        List<Entry> entries = new ArrayList<>();
+        StringBuilder allContent = new StringBuilder();
 
         try (Stream<Path> paths = Files.walk(Path.of("C:\\Users\\vojte\\Dropbox\\_Archiv\\Denik\\XJS\\Deník\\Entries"))) {
             paths.filter(Files::isRegularFile)
@@ -39,21 +42,31 @@ public class Extractor {
 
                         try {
                             String content = Files.readString(path);
-                            entry.setContent(content);
+                            entry.setFullContentHtml(content);
 
                             LocalDate dateFromPath = getDateFromPath(entry.getFilePath());
                             entry.setDate(dateFromPath);
 
                             Document doc = Jsoup.parse(content);
 
-                            Element header = doc.selectFirst("head");
-                            if(header != null) {
-                                Elements title = header.getElementsByTag("title");
+                            Element head = doc.selectFirst("head");
+                            if(head != null) {
+                                Elements title = head.getElementsByTag("title");
                                 entry.setTitle(title.text());
                             } else {
                                 entry.setTitle("[No title]");
                                 // TODO handle no title found
                             }
+
+                            String text = doc.body().text();
+                            allContent.append(text).append("\n");
+
+                            if(StringUtils.isBlank(text)) {
+                                log.warn("Text is blank for file: {}", path);
+                            }
+
+                            String htmlBody = doc.body().html();
+                            entry.setBodyHtml(htmlBody);
 
                         } catch (IOException e) {
                             log.error("Failed to read file: {}, Error: {}", path, e.getMessage(), e);
@@ -65,6 +78,8 @@ public class Extractor {
             return MessageFormat.format("Failed to extract : {0}", e.getMessage());
         }
 
+        log.info("Extracted {} entries", entries.size());
+        log.info(allContent.toString());
         return "extracted";
     }
 
