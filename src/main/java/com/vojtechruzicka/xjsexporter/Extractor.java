@@ -1,31 +1,68 @@
 package com.vojtechruzicka.xjsexporter;
 
+import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
+@Slf4j
 @ShellComponent
 public class Extractor {
 
     @ShellMethod(value = "Extracts something", key = "extract")
     public String extract() {
 
+        List<Entry> entries = new ArrayList<>();
+
+
         try (Stream<Path> paths = Files.walk(Path.of("C:\\Users\\vojte\\Dropbox\\_Archiv\\Denik\\XJS\\Deník\\Entries"))) {
             paths.filter(Files::isRegularFile)
                     .forEach(path -> {
-                        System.out.println(path);
-                        LocalDate dateFromPath = getDateFromPath(path.toFile().getAbsolutePath());
-                        System.out.println(dateFromPath);
+                        Entry entry = new Entry();
+                        entries.add(entry);
+
+                        entry.setFilePath(path.toAbsolutePath().toString());
+
+                        try {
+                            String content = Files.readString(path);
+                            entry.setContent(content);
+
+                            LocalDate dateFromPath = getDateFromPath(entry.getFilePath());
+                            entry.setDate(dateFromPath);
+
+                            Document doc = Jsoup.parse(content);
+
+                            Element header = doc.selectFirst("head");
+                            if(header != null) {
+                                Elements title = header.getElementsByTag("title");
+                                entry.setTitle(title.text());
+                            } else {
+                                entry.setTitle("[No title]");
+                                // TODO handle no title found
+                            }
+
+                        } catch (IOException e) {
+                            log.error("Failed to read file: {}, Error: {}", path, e.getMessage(), e);
+                        }
+
                     });
         } catch (IOException e) {
-            return "Failed to extract :"+(e.getMessage());
+            log.error("Extract failed:{}", e.getMessage());
+            return MessageFormat.format("Failed to extract : {0}", e.getMessage());
         }
 
         return "extracted";
@@ -44,13 +81,10 @@ public class Extractor {
 
             String dateString = year + "-" + month + "-" + day;
 
-            LocalDate date = LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE);
-
-            System.out.println("Parsed Date: " + date);
-            return date;
+            return LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE);
 
         } catch (ArrayIndexOutOfBoundsException | DateTimeParseException e) {
-            System.err.println("Failed to parse date from file path: " + e.getMessage());
+            log.error("Failed to parse date from file path: {}", e.getMessage(), e);
             throw e;
         }
 
