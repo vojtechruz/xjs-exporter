@@ -9,5 +9,4 @@ public class XjsExporterApplication {
     public static void main(String[] args) {
         SpringApplication.run(XjsExporterApplication.class, args);
     }
-
 }

@@ -1,0 +1,6 @@
+cls
+call C:\Users\vojte\.jdks\corretto-21.0.5\bin\java.exe -Dmaven.multiModuleProjectDirectory=C:\projects\xjs-exporter -Djansi.passthrough=true "-Dmaven.home=C:\Users\vojte\AppData\Local\Programs\IntelliJ IDEA Ultimate\plugins\maven\lib\maven3" "-Dclassworlds.conf=C:\Users\vojte\AppData\Local\Programs\IntelliJ IDEA Ultimate\plugins\maven\lib\maven3\bin\m2.conf" "-Dmaven.ext.class.path=C:\Users\vojte\AppData\Local\Programs\IntelliJ IDEA Ultimate\plugins\maven\lib\maven-event-listener.jar" "-javaagent:C:\Users\vojte\AppData\Local\Programs\IntelliJ IDEA Ultimate\lib\idea_rt.jar=52294:C:\Users\vojte\AppData\Local\Programs\IntelliJ IDEA Ultimate\bin" -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8 -classpath "C:\Users\vojte\AppData\Local\Programs\IntelliJ IDEA Ultimate\plugins\maven\lib\maven3\boot\plexus-classworlds-2.8.0.jar;C:\Users\vojte\AppData\Local\Programs\IntelliJ IDEA Ultimate\plugins\maven\lib\maven3\boot\plexus-classworlds.license" org.codehaus.classworlds.Launcher -Didea.version=2024.3.2 compile
+cd target
+cls
+call C:\Users\vojte\.jdks\openjdk-23.0.1\bin\java -jar xjs-exporter-0.0.1-SNAPSHOT.jar
+cd ..
