@@ -22,7 +22,7 @@ public class MetadataExtractor {
         File inputFile = new File(filePath + "journal.xjn");
         Document doc = Jsoup.parse(inputFile, "UTF-8", "", Parser.xmlParser());
 
-        Map<String, EntryMetadata> entries = getEntries(doc);
+        Map<String, EntryMetadata> entries = getEntries(filePath, doc);
         Map<String, PersonMetadata> persons = getPersons(doc);
         Map<String, CategoryMetadata> categories = getCategories(doc);
         Map<String, AttachmentMetadata> attachments = getAttachments(filePath,doc);
@@ -30,7 +30,7 @@ public class MetadataExtractor {
         return new Metadata(persons, categories, attachments, entries);
     }
 
-    private Map<String, EntryMetadata> getEntries(Document doc) {
+    private Map<String, EntryMetadata> getEntries(String filePath, Document doc) {
 
         Map<String, EntryMetadata> entries = new HashMap<>();
 
@@ -41,14 +41,13 @@ public class MetadataExtractor {
             String title = titleElement != null ? titleElement.text() : null;
             LocalDateTime dateTime = StringUtils.isNotBlank(dateCreated) ? LocalDateTime.parse(dateCreated) : null;
             String location = entryElement.select("content > value").text();
-
-            //TODO attachments, categories, persons
+            String absoluteLocationPath = filePath != null ? filePath.substring(0, filePath.lastIndexOf(File.separator)) + File.separator + location : null;
 
             List<String> attachmentIds = entryElement.select("attachment-ids > id").eachText();
             List<String> categoryIds = entryElement.select("category-ids > id").eachText();
             List<String> personIds = entryElement.select("person-ids > id").eachText();
 
-            EntryMetadata entry = new EntryMetadata(id, title, location, dateTime, attachmentIds, categoryIds, personIds);
+            EntryMetadata entry = new EntryMetadata(id, title, absoluteLocationPath, dateTime, attachmentIds, categoryIds, personIds);
 
             entries.put(id, entry);
         });
