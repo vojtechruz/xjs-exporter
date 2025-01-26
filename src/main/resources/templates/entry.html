@@ -4,7 +4,27 @@
     <meta charset="UTF-8">
     <title th:text="${title}"></title>
 </head>
-<body th:utext="${body}">
+<body>
+    <div class="categories" th:if="${categories.size() > 0}">
+        <span class="metadata-title">Categories:</span>
+        <span class="category" th:each="category : ${categories}" th:text="${category}">
+        </span>
+    </div>
+    <div class="persons" th:if="${persons.size() > 0}">
+        <span class="metadata-title">Persons:</span>
+        <span class="person" th:each="person : ${persons}" th:text="${person}">
+        </span>
+    </div>
+    <hr>
+    <div class="entry-body" th:utext="${body}">
 
+    </div>
+    <div class="attachments" th:if="${attachments.size() > 0}">
+        <hr>
+        <div class="metadata-title">Attachments:</div>
+        <span  class="attachment" th:each="attachment : ${attachments}">
+            <a th:href="${attachment.absoluteSourcePath}" th:text="${attachment.name}"></a>
+        </span>
+    </div>
 </body>
 </html>

@@ -4,6 +4,8 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.util.List;
+
 @Service
 public class HtmlGenerator {
 
@@ -13,23 +15,24 @@ public class HtmlGenerator {
         this.templateEngine = templateEngine;
     }
 
-    public String generateHtml(Entry entry) {
-        Context context = new Context();
-        context.setVariable("title", entry.getTitle());
-        context.setVariable("body", entry.getBodyHtml());
-
-        return templateEngine.process("entry", context);
-    }
-
     public static void main(String[] args) {
 
-        TemplateEngine templateEngine1 = new ExporterConfiguration().templateEngine();
+        TemplateEngine templateEngine = new ExporterConfiguration().templateEngine();
 
+        HtmlGenerator generator = new HtmlGenerator(templateEngine);
 
-        HtmlGenerator generator = new HtmlGenerator(templateEngine1);
-        Entry entry = new Entry();
-        entry.setBodyHtml("<p>Hello world!</p>");
-        entry.setTitle("My title");
-        System.out.println(generator.generateHtml(entry));
+        String html = generator.generateHtml("My Title", "<h1>Hello world</h1>", List.of("CAT1", "CAT2"), List.of("PERSON1", "PERSON2", "PERSON3"), List.of(new Attachment("C:\\temp\\file.txt","ATACHMENT1","temp\\file.txt")));
+        System.out.println(html);
+    }
+
+    public String generateHtml(String title, String htmlBody, List<String> categories, List<String> persons, List<Attachment> attachments) {
+        Context context = new Context();
+        context.setVariable("title", title);
+        context.setVariable("body", htmlBody);
+        context.setVariable("categories", categories);
+        context.setVariable("persons", persons);
+        context.setVariable("attachments", attachments);
+
+        return templateEngine.process("entry", context);
     }
 }

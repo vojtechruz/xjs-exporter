@@ -1,5 +1,7 @@
 package com.vojtechruzicka.xjsexporter;
 
-public record Metadata(java.util.Map<String, Person> people, java.util.Map<String, Category> tags,
-                       java.util.Map<String, Attachment> attachments) {
+import java.util.Map;
+
+public record Metadata(Map<String, PersonMetadata> people, Map<String, CategoryMetadata> categories,
+                       Map<String, AttachmentMetadata> attachments, Map<String, EntryMetadata> entries) {
 }

@@ -1,14 +1,7 @@
 package com.vojtechruzicka.xjsexporter;
 
-import lombok.Data;
+import java.time.LocalDateTime;
+import java.util.List;
 
-import java.time.LocalDate;
-
-@Data
-public class Entry {
-    private String filePath;
-    private LocalDate date;
-    private String fullContentHtml;
-    private String bodyHtml;
-    private String title;
+public record Entry(String id, String title, LocalDateTime created, String html, List<String> persons, List<String> categories, List<Attachment> attachments) {
 }

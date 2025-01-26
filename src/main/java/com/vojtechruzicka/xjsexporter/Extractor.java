@@ -2,106 +2,103 @@ package com.vojtechruzicka.xjsexporter;
 
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Stream;
 
 @Slf4j
 @ShellComponent
 public class Extractor {
+
+    private final MetadataExtractor metadataExtractor;
+    private final HtmlGenerator htmlGenerator;
+    private final Terminal terminal;
+
+    public Extractor(MetadataExtractor metadataExtractor, HtmlGenerator htmlGenerator, Terminal terminal) {
+        this.metadataExtractor = metadataExtractor;
+        this.htmlGenerator = htmlGenerator;
+        this.terminal = terminal;
+    }
 
     @ShellMethod(value = "Extracts something", key = "extract")
     public String extract() {
 
         // TODO extract as json also
 
-        List<Entry> entries = new ArrayList<>();
-        StringBuilder allContent = new StringBuilder();
+        String path = "C:\\Users\\vojte\\Dropbox\\_Archiv\\Denik\\XJS\\Deník\\";
 
-        try (Stream<Path> paths = Files.walk(Path.of("C:\\Users\\vojte\\Dropbox\\_Archiv\\Denik\\XJS\\Deník\\Entries"))) {
-            paths.filter(Files::isRegularFile)
-                    .forEach(path -> {
-                        Entry entry = new Entry();
-                        entries.add(entry);
+        Metadata metadata;
 
-                        entry.setFilePath(path.toAbsolutePath().toString());
-
-                        try {
-                            String content = Files.readString(path);
-                            entry.setFullContentHtml(content);
-
-                            LocalDate dateFromPath = getDateFromPath(entry.getFilePath());
-                            entry.setDate(dateFromPath);
-
-                            Document doc = Jsoup.parse(content);
-
-                            Element head = doc.selectFirst("head");
-                            if(head != null) {
-                                Elements title = head.getElementsByTag("title");
-                                entry.setTitle(title.text());
-                            } else {
-                                entry.setTitle("[No title]");
-                                // TODO handle no title found
-                            }
-
-                            String text = doc.body().text();
-                            allContent.append(text).append("\n");
-
-                            if(StringUtils.isBlank(text)) {
-                                log.warn("Text is blank for file: {}", path);
-                            }
-
-                            String htmlBody = doc.body().html();
-                            entry.setBodyHtml(htmlBody);
-
-                        } catch (IOException e) {
-                            log.error("Failed to read file: {}, Error: {}", path, e.getMessage(), e);
-                        }
-
-                    });
-        } catch (IOException e) {
-            log.error("Extract failed:{}", e.getMessage());
-            return MessageFormat.format("Failed to extract : {0}", e.getMessage());
-        }
-
-        log.info("Extracted {} entries", entries.size());
-        log.info(allContent.toString());
-        return "extracted";
-    }
-
-    public static void main(String[] args) {
-        new Extractor().extract();
-    }
-
-    private LocalDate getDateFromPath(String filePath) {
         try {
-            String[] parts = filePath.split("\\\\");
-            String year = parts[parts.length - 4];
-            String month = parts[parts.length - 3];
-            String day = parts[parts.length - 2];
-
-            String dateString = year + "-" + month + "-" + day;
-
-            return LocalDate.parse(dateString, DateTimeFormatter.ISO_LOCAL_DATE);
-
-        } catch (ArrayIndexOutOfBoundsException | DateTimeParseException e) {
-            log.error("Failed to parse date from file path: {}", e.getMessage(), e);
-            throw e;
+            metadata = metadataExtractor.extractMetadata(path);
+        } catch (IOException e) {
+            return MessageFormat.format("Failed to extract metadata: {0}", e.getMessage());
         }
 
+        List<Entry> entries = metadata.entries().values().stream().map(entryMetadata -> {
+            String id = entryMetadata.id();
+            String title = entryMetadata.title();
+            LocalDateTime dateCreated = entryMetadata.dateCreated();
+            List<Attachment> attachments = entryMetadata.attachmentIds().stream().map(attachmentId -> getAttachment(metadata.attachments().get(attachmentId))).toList();
+            List<String> categories =  entryMetadata.categoryIds().stream().map(categoryId -> metadata.categories().get(categoryId).title()).toList();
+            List<String> persons = entryMetadata.personIds().stream().map(personId -> metadata.people().get(personId).getFullName()).toList();
+
+            String htmlBody = getHtmlBody(entryMetadata);
+            String html = htmlGenerator.generateHtml(entryMetadata.title(), htmlBody, categories,persons, attachments);
+            return new Entry(id, title, dateCreated, html, persons, categories, attachments);
+        }).toList();
+
+        return "";
     }
+
+    private String getHtmlBody(EntryMetadata entryMetadata) {
+        if(StringUtils.isBlank(entryMetadata.location())) {
+            return null;
+        }
+
+        Path path = Path.of(entryMetadata.location());
+
+        if(Files.exists(path)) {
+            try {
+                return Jsoup.parse(path).body().html();
+            } catch (IOException e) {
+                terminal.writer().println("Could not read file: " + path + ", Error: " + e.getMessage());
+                throw new RuntimeException(e);
+            }
+        } else {
+            terminal.writer().println("File not found: " + path);
+            return null;
+        }
+    }
+
+    private Attachment getAttachment(AttachmentMetadata attachmentMetadata) {
+        return new Attachment(attachmentMetadata.absoluteSourcePath(), attachmentMetadata.name(), attachmentMetadata.relativeLocation());
+    }
+
+    public static void main(String[] args) throws IOException {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream("help".getBytes());
+
+        // Capture all output written to the terminal
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        // Create a custom terminal with the simulated streams
+        Terminal terminal = TerminalBuilder.builder()
+                .streams(inputStream, outputStream) // Custom input and output streams
+                .system(false)                      // Do not use the system terminal
+                .build();
+
+        new Extractor(new MetadataExtractor(), new HtmlGenerator(new ExporterConfiguration().templateEngine()), terminal).extract();
+    }
+
 }
