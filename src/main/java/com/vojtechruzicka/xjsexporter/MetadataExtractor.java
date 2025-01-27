@@ -65,7 +65,7 @@ public class MetadataExtractor {
 
             String relativeLocation = locationElement != null ? locationElement.text() : null;
             String attachementName = relativeLocation;
-            String absoluteSourcePath = filePath != null ? filePath.substring(0, filePath.lastIndexOf(File.separator)) + File.separator + attachementName : null;
+            String absoluteSourcePath = filePath != null ? filePath.substring(0, filePath.lastIndexOf(File.separator)) + File.separator + "Attachments" + File.separator + attachementName : null;
 
             AttachmentMetadata attachment = new AttachmentMetadata(id, absoluteSourcePath, attachementName,relativeLocation);
             attachments.put(id, attachment);

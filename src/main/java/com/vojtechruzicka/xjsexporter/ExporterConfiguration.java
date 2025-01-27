@@ -10,7 +10,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 public class ExporterConfiguration {
 
     @Bean
-    public TemplateEngine templateEngine() {
+    public TemplateEngine defaultTemplatingEngine() {
         // Create a template resolver
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
         templateResolver.setPrefix("templates/"); // Templates are located in src/main/resources/templates/

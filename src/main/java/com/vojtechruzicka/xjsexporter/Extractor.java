@@ -10,6 +10,7 @@ import org.springframework.shell.standard.ShellMethod;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +38,7 @@ public class Extractor {
         // TODO extract as json also
 
         String path = "C:\\Users\\vojte\\Dropbox\\_Archiv\\Denik\\XJS\\Deník\\";
+        String targetPath = "C:\\tmp\\denik\\";
 
         Metadata metadata;
 
@@ -46,20 +48,50 @@ public class Extractor {
             return MessageFormat.format("Failed to extract metadata: {0}", e.getMessage());
         }
 
+        StringBuilder sb = new StringBuilder();
+
         List<Entry> entries = metadata.entries().values().stream().map(entryMetadata -> {
             String id = entryMetadata.id();
             String title = entryMetadata.title();
+            String location = entryMetadata.location();
             LocalDateTime dateCreated = entryMetadata.dateCreated();
             List<Attachment> attachments = entryMetadata.attachmentIds().stream().map(attachmentId -> getAttachment(metadata.attachments().get(attachmentId))).toList();
             List<String> categories =  entryMetadata.categoryIds().stream().map(categoryId -> metadata.categories().get(categoryId).title()).toList();
             List<String> persons = entryMetadata.personIds().stream().map(personId -> metadata.people().get(personId).getFullName()).toList();
 
             String htmlBody = getHtmlBody(entryMetadata);
-            String html = htmlGenerator.generateHtml(entryMetadata.title(), htmlBody, categories,persons, attachments);
-            return new Entry(id, title, dateCreated, html, persons, categories, attachments);
+            String html = htmlGenerator.generateHtml(entryMetadata.title(), dateCreated, htmlBody, categories, persons, attachments);
+
+            sb.append(html);
+
+            return new Entry(id, title, dateCreated, html, persons, categories, attachments, location);
         }).toList();
 
-        return "";
+        entries.forEach(entry -> {
+            try {
+                Files.write(Path.of(targetPath+entry.created().toLocalDate().toString()+"_"+entry.id()+".html"), entry.html().getBytes());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        metadata.attachments().values().forEach(attachmentMetadata -> {
+            try {
+                Path target = Path.of(targetPath + "Attachments" + File.separator + attachmentMetadata.name());
+                Files.createDirectories(target.getParent());
+                Files.copy(Path.of(attachmentMetadata.absoluteSourcePath()), target);
+            } catch (IOException e) {
+                terminal.writer().println("Could not copy attachment file: " + attachmentMetadata.absoluteSourcePath() + ", Error: " + e);
+            }
+        });
+
+        try {
+            Files.write(Path.of(targetPath + "all.txt"), sb.toString().getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return "Extract finished, " + entries.size() + " entries generated";
     }
 
     private String getHtmlBody(EntryMetadata entryMetadata) {
@@ -98,7 +130,7 @@ public class Extractor {
                 .system(false)                      // Do not use the system terminal
                 .build();
 
-        new Extractor(new MetadataExtractor(), new HtmlGenerator(new ExporterConfiguration().templateEngine()), terminal).extract();
+        new Extractor(new MetadataExtractor(), new HtmlGenerator(new ExporterConfiguration().defaultTemplatingEngine()), terminal).extract();
     }
 
 }
