@@ -125,7 +125,7 @@ public class Extractor {
                 .collect(Collectors.groupingBy(entry -> entry.created().getYear()));
         
         entriesByYear.forEach((year, yearEntries) -> {
-            String yearPage = htmlGenerator.generateMainPage(metadata, yearEntries);
+            String yearPage = htmlGenerator.generateMainPage(metadata, yearEntries, "year", String.valueOf(year));
             try {
                 Files.write(Path.of(finalTargetPath + year + ".html"), yearPage.getBytes());
             } catch (IOException e) {
@@ -145,7 +145,7 @@ public class Extractor {
                     .toList();
             
             if (!personEntries.isEmpty()) {
-                String personPage = htmlGenerator.generateMainPage(metadata, personEntries);
+                String personPage = htmlGenerator.generateMainPage(metadata, personEntries, "person", person);
                 try {
                     String fileName = "person_" + person.replace(' ', '_') + ".html";
                     Files.write(Path.of(finalTargetPath + fileName), personPage.getBytes());
@@ -167,7 +167,7 @@ public class Extractor {
                     .toList();
             
             if (!categoryEntries.isEmpty()) {
-                String categoryPage = htmlGenerator.generateMainPage(metadata, categoryEntries);
+                String categoryPage = htmlGenerator.generateMainPage(metadata, categoryEntries, "category", category);
                 try {
                     String fileName = "category_" + category.replace(' ', '_') + ".html";
                     Files.write(Path.of(finalTargetPath + fileName), categoryPage.getBytes());
@@ -176,6 +176,23 @@ public class Extractor {
                 }
             }
         });
+        
+        // Generate list pages
+        try {
+            // Persons list page
+            String personsListPage = htmlGenerator.generatePersonsListPage(metadata, entries);
+            Files.write(Path.of(finalTargetPath + "persons_list.html"), personsListPage.getBytes());
+            
+            // Categories list page
+            String categoriesListPage = htmlGenerator.generateCategoriesListPage(metadata, entries);
+            Files.write(Path.of(finalTargetPath + "categories_list.html"), categoriesListPage.getBytes());
+            
+            // Years list page
+            String yearsListPage = htmlGenerator.generateYearsListPage(entries);
+            Files.write(Path.of(finalTargetPath + "years_list.html"), yearsListPage.getBytes());
+        } catch (IOException e) {
+            terminal.writer().println("Could not write list pages, Error: " + e);
+        }
 
         // Write all entries to a single file (for backup/debugging)
         try {

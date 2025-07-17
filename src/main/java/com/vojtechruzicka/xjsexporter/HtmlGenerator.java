@@ -8,8 +8,14 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class HtmlGenerator {
@@ -30,6 +36,23 @@ public class HtmlGenerator {
         System.out.println(html);
     }
 
+    private String getCssContent() {
+        try (var resource = getClass().getResourceAsStream("/static/css/styles.css")) {
+            if (resource != null) {
+                String css = new String(resource.readAllBytes());
+
+                return css;
+            } else {
+                return "/* CSS file not found */";
+            }
+        } catch (IOException e) {
+            return "/* CSS file not found: " + e.getMessage() + " */";
+        }
+
+
+    }
+
+
     public String generateHtml(String title, LocalDateTime created, String htmlBody, List<String> categories, List<String> persons, List<Attachment> attachments) {
         Context context = new Context();
         context.setVariable("title", title);
@@ -43,19 +66,129 @@ public class HtmlGenerator {
     }
 
     public String generateMainPage(Metadata metadata, List<Entry> entries) {
+        return generateMainPage(metadata, entries, "main", null);
+    }
 
-        List<String> categories = metadata.categories().values().stream().map( c -> c.title()).distinct().toList();
-        List<String> persons= metadata.people().values().stream().map( c -> c.getFullName()).distinct().toList();
-        List<String> years = entries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().toList();
+    public String generateMainPage(Metadata metadata, List<Entry> entries, String pageType, String currentItem) {
+        // Get all available categories, persons, and years
+        List<String> allCategories = metadata.categories().values().stream().map(c -> c.title()).distinct().toList();
+        List<String> allPersons = metadata.people().values().stream().map(c -> c.getFullName()).distinct().toList();
+        List<String> allYears = entries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().toList();
 
+        // Create filtered lists based on the current entries
+        List<String> filteredCategories = entries.stream()
+                .flatMap(e -> e.categories().stream())
+                .distinct()
+                .toList();
+        
+        List<String> filteredPersons = entries.stream()
+                .flatMap(e -> e.persons().stream())
+                .distinct()
+                .toList();
+        
+        List<String> filteredYears = entries.stream()
+                .map(e -> String.valueOf(e.created().getYear()))
+                .distinct()
+                .toList();
 
+        // Set up the context
         Context context = new Context();
-        context.setVariable("journalEntries", entries);
-        context.setVariable("persons", persons);
-        context.setVariable("categories", categories);
-        context.setVariable("years", years);
+        context.setVariable("cssContent", getCssContent());
 
+        context.setVariable("journalEntries", entries);
+        context.setVariable("persons", allPersons);
+        context.setVariable("categories", allCategories);
+        context.setVariable("years", allYears);
+        
+        // Add filtered lists
+        context.setVariable("filteredPersons", filteredPersons);
+        context.setVariable("filteredCategories", filteredCategories);
+        context.setVariable("filteredYears", filteredYears);
+        
+        // Add page type and current item
+        context.setVariable("pageType", pageType);
+        context.setVariable("currentItem", currentItem);
+        
+        // Set page title based on page type
+        String pageTitle = "Journal Entries";
+        if (pageType.equals("person") && currentItem != null) {
+            pageTitle = "Entries for Person: " + currentItem;
+        } else if (pageType.equals("category") && currentItem != null) {
+            pageTitle = "Entries for Category: " + currentItem;
+        } else if (pageType.equals("year") && currentItem != null) {
+            pageTitle = "Entries for Year: " + currentItem;
+        }
+        context.setVariable("pageTitle", pageTitle);
 
         return templateEngine.process("journal_entries_display", context);
+    }
+    
+    public String generatePersonsListPage(Metadata metadata, List<Entry> allEntries) {
+        List<String> persons = metadata.people().values().stream()
+                .map(p -> p.getFullName())
+                .distinct()
+                .sorted()
+                .toList();
+        
+        // Count entries for each person
+        Map<String, Integer> personCounts = new HashMap<>();
+        for (String person : persons) {
+            int count = (int) allEntries.stream()
+                    .filter(e -> e.persons().contains(person))
+                    .count();
+            personCounts.put(person, count);
+        }
+        
+        Context context = new Context();
+        context.setVariable("persons", persons);
+        context.setVariable("personCounts", personCounts);
+        
+        return templateEngine.process("persons_list", context);
+    }
+    
+    public String generateCategoriesListPage(Metadata metadata, List<Entry> allEntries) {
+        List<String> categories = metadata.categories().values().stream()
+                .map(c -> c.title())
+                .distinct()
+                .sorted()
+                .toList();
+        
+        // Count entries for each category
+        Map<String, Integer> categoryCounts = new HashMap<>();
+        for (String category : categories) {
+            int count = (int) allEntries.stream()
+                    .filter(e -> e.categories().contains(category))
+                    .count();
+            categoryCounts.put(category, count);
+        }
+        
+        Context context = new Context();
+        context.setVariable("categories", categories);
+        context.setVariable("categoryCounts", categoryCounts);
+        
+        return templateEngine.process("categories_list", context);
+    }
+    
+    public String generateYearsListPage(List<Entry> allEntries) {
+        List<String> years = allEntries.stream()
+                .map(e -> String.valueOf(e.created().getYear()))
+                .distinct()
+                .sorted()
+                .toList();
+        
+        // Count entries for each year
+        Map<String, Integer> yearCounts = new HashMap<>();
+        for (String year : years) {
+            int count = (int) allEntries.stream()
+                    .filter(e -> String.valueOf(e.created().getYear()).equals(year))
+                    .count();
+            yearCounts.put(year, count);
+        }
+        
+        Context context = new Context();
+        context.setVariable("years", years);
+        context.setVariable("yearCounts", yearCounts);
+        
+        return templateEngine.process("years_list", context);
     }
 }

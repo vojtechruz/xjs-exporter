@@ -2,8 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Journal Entries</title>
-    <link rel="stylesheet" href="/css/styles.css"> <!-- Optional: Link your CSS file -->
+    <title th:text="${pageTitle != null ? pageTitle : 'Journal Entries'}">Journal Entries</title>
+    <style th:utext="${cssContent}"></style>
 </head>
 <body>
 <!-- Outer container to center and limit width -->
@@ -12,38 +12,65 @@
     <div class="navigation-panel">
         <h2>Browse By</h2>
 
-        <!-- Persons -->
-        <h3>Persons</h3>
-        <ul>
-            <li th:each="person : ${persons}">
-                <a th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}" 
-                   th:text="${person}"></a>
-            </li>
-            <li th:if="${persons.size() == 0}">
-                <span>No persons available.</span>
-            </li>
+        <!-- Links to list pages -->
+        <ul class="list-pages">
+            <li><a th:if="${pageType != 'main'}" href="index.html">All Entries</a>
+                <strong th:if="${pageType == 'main'}">All Entries</strong></li>
+            <li><a href="persons_list.html">Persons List</a></li>
+            <li><a href="categories_list.html">Categories List</a></li>
+            <li><a href="years_list.html">Years List</a></li>
         </ul>
 
-        <!-- Categories -->
-        <h3>Categories</h3>
-        <ul>
-            <li th:each="category : ${categories}">
-                <a th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}" 
-                   th:text="${category}"></a>
-            </li>
-            <li th:if="${categories.size() == 0}">
-                <span>No categories available.</span>
-            </li>
-        </ul>
+        <!-- Current filter info -->
+        <div th:if="${pageType == 'person'}" class="current-filter">
+            <h3>Current Person</h3>
+            <p th:text="${currentItem}"></p>
+        </div>
+        <div th:if="${pageType == 'category'}" class="current-filter">
+            <h3>Current Category</h3>
+            <p th:text="${currentItem}"></p>
+        </div>
+        <div th:if="${pageType == 'year'}" class="current-filter">
+            <h3>Current Year</h3>
+            <p th:text="${currentItem}"></p>
+        </div>
 
-        <!-- Years -->
+        <!-- Persons - only show if not on a person page or show filtered list on category page -->
+        <div th:if="${pageType != 'person'}">
+            <h3>Persons</h3>
+            <ul>
+                <li th:each="person : ${filteredPersons != null ? filteredPersons : persons}">
+                    <a th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}" 
+                       th:text="${person}"></a>
+                </li>
+                <li th:if="${(filteredPersons != null ? filteredPersons : persons).size() == 0}">
+                    <span>No persons available.</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Categories - only show if not on a category page or show filtered list on person page -->
+        <div th:if="${pageType != 'category'}">
+            <h3>Categories</h3>
+            <ul>
+                <li th:each="category : ${filteredCategories != null ? filteredCategories : categories}">
+                    <a th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}" 
+                       th:text="${category}"></a>
+                </li>
+                <li th:if="${(filteredCategories != null ? filteredCategories : categories).size() == 0}">
+                    <span>No categories available.</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Years - always show but filter based on current view -->
         <h3>Years</h3>
         <ul>
-            <li th:each="year : ${years}">
+            <li th:each="year : ${filteredYears != null ? filteredYears : years}">
                 <a th:href="${#strings.concat(year, '.html')}"
                    th:text="${year}"></a>
             </li>
-            <li th:if="${years.size() == 0}">
+            <li th:if="${(filteredYears != null ? filteredYears : years).size() == 0}">
                 <span>No years available.</span>
             </li>
         </ul>
