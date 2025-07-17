@@ -40,8 +40,10 @@
             <h3>Persons</h3>
             <ul>
                 <li th:each="person : ${filteredPersons != null ? filteredPersons : persons}">
-                    <a th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}"
-                       th:text="${person}"></a>
+                    <a th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}">
+                        <span th:text="${person}"></span>
+                        <span th:if="${counts != null and counts.containsKey(person)}" th:text="${'(' + counts.get(person) + ')'}"></span>
+                    </a>
                 </li>
                 <li th:if="${(filteredPersons != null ? filteredPersons : persons).size() == 0}">
                     <span>No persons available.</span>
@@ -54,8 +56,10 @@
             <h3>Categories</h3>
             <ul>
                 <li th:each="category : ${filteredCategories != null ? filteredCategories : categories}">
-                    <a th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}"
-                       th:text="${category}"></a>
+                    <a th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}">
+                        <span th:text="${category}"></span>
+                        <span th:if="${counts != null and counts.containsKey(category)}" th:text="${'(' + counts.get(category) + ')'}"></span>
+                    </a>
                 </li>
                 <li th:if="${(filteredCategories != null ? filteredCategories : categories).size() == 0}">
                     <span>No categories available.</span>
@@ -68,8 +72,10 @@
             <h3>Years</h3>
             <ul>
                 <li th:each="year : ${filteredYears != null ? filteredYears : years}">
-                    <a th:href="${#strings.concat(year, '.html')}"
-                       th:text="${year}"></a>
+                    <a th:href="${#strings.concat(year, '.html')}">
+                        <span th:text="${year}"></span>
+                        <span th:if="${counts != null and counts.containsKey(year)}" th:text="${'(' + counts.get(year) + ')'}"></span>
+                    </a>
                 </li>
                 <li th:if="${(filteredYears != null ? filteredYears : years).size() == 0}">
                     <span>No years available.</span>

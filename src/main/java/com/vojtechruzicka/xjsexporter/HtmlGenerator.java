@@ -76,6 +76,33 @@ public class HtmlGenerator {
                 .sorted()
                 .toList().reversed();
         
+        // Calculate counts for each item
+        Map<String, Integer> counts = new HashMap<>();
+        
+        // Count entries for each person
+        for (String person : allPersons) {
+            int count = (int) allEntries.stream()
+                    .filter(e -> e.persons().contains(person))
+                    .count();
+            counts.put(person, count);
+        }
+        
+        // Count entries for each category
+        for (String category : allCategories) {
+            int count = (int) allEntries.stream()
+                    .filter(e -> e.categories().contains(category))
+                    .count();
+            counts.put(category, count);
+        }
+        
+        // Count entries for each year
+        for (String year : allYears) {
+            int count = (int) allEntries.stream()
+                    .filter(e -> String.valueOf(e.created().getYear()).equals(year))
+                    .count();
+            counts.put(year, count);
+        }
+        
         // Add CSS content
         context.setVariable("cssContent", getCssContent());
         
@@ -86,6 +113,7 @@ public class HtmlGenerator {
         context.setVariable("pageType", pageType);
         context.setVariable("currentItem", currentItem);
         context.setVariable("pageTitle", pageTitle);
+        context.setVariable("counts", counts);
         
         // Set filtered lists to all lists by default (for list pages)
         context.setVariable("filteredPersons", allPersons);
