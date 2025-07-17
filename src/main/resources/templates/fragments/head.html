@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- Head Fragment -->
+    <head th:fragment="head(pageTitle)">
+        <meta charset="UTF-8">
+        <title th:text="${pageTitle != null ? pageTitle : 'Journal Entries'}">Journal Entries</title>
+        <style th:utext="${cssContent}"></style>
+    </head>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- Navigation Panel Fragment -->
+    <div th:fragment="navigation-panel(pageType, currentItem, persons, categories, years, filteredPersons, filteredCategories, filteredYears)" class="navigation-panel">
+        <h2>Browse By</h2>
+
+        <!-- Links to list pages -->
+        <ul class="list-pages">
+            <li><a th:if="${pageType != 'main'}" href="index.html">All Entries</a>
+                <strong th:if="${pageType == 'main'}">All Entries</strong></li>
+            <li><a th:if="${pageType != 'persons_list'}" href="persons_list.html">Persons List</a>
+                <strong th:if="${pageType == 'persons_list'}">Persons List</strong></li>
+            <li><a th:if="${pageType != 'categories_list'}" href="categories_list.html">Categories List</a>
+                <strong th:if="${pageType == 'categories_list'}">Categories List</strong></li>
+            <li><a th:if="${pageType != 'years_list'}" href="years_list.html">Years List</a>
+                <strong th:if="${pageType == 'years_list'}">Years List</strong></li>
+        </ul>
+
+        <!-- Current filter info -->
+        <div th:if="${pageType == 'person'}" class="current-filter">
+            <h3>Current Person</h3>
+            <p th:text="${currentItem}"></p>
+        </div>
+        <div th:if="${pageType == 'category'}" class="current-filter">
+            <h3>Current Category</h3>
+            <p th:text="${currentItem}"></p>
+        </div>
+        <div th:if="${pageType == 'year'}" class="current-filter">
+            <h3>Current Year</h3>
+            <p th:text="${currentItem}"></p>
+        </div>
+
+        <!-- Persons - only show if not on a person page or show filtered list -->
+        <div th:if="${pageType != 'person'}">
+            <h3>Persons</h3>
+            <ul>
+                <li th:each="person : ${filteredPersons != null ? filteredPersons : persons}">
+                    <a th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}"
+                       th:text="${person}"></a>
+                </li>
+                <li th:if="${(filteredPersons != null ? filteredPersons : persons).size() == 0}">
+                    <span>No persons available.</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Categories - only show if not on a category page or show filtered list -->
+        <div th:if="${pageType != 'category'}">
+            <h3>Categories</h3>
+            <ul>
+                <li th:each="category : ${filteredCategories != null ? filteredCategories : categories}">
+                    <a th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}"
+                       th:text="${category}"></a>
+                </li>
+                <li th:if="${(filteredCategories != null ? filteredCategories : categories).size() == 0}">
+                    <span>No categories available.</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Years - only show if not on a year page or show filtered list -->
+        <div th:if="${pageType != 'year'}">
+            <h3>Years</h3>
+            <ul>
+                <li th:each="year : ${filteredYears != null ? filteredYears : years}">
+                    <a th:href="${#strings.concat(year, '.html')}"
+                       th:text="${year}"></a>
+                </li>
+                <li th:if="${(filteredYears != null ? filteredYears : years).size() == 0}">
+                    <span>No years available.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

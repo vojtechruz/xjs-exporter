@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- List Template Fragment -->
+    <div th:fragment="list-template(title, items, itemType, counts)" class="content">
+        <h1 th:text="${title}">All Items</h1>
+
+        <div class="list-container" th:if="${items.size() > 0}">
+            <ul class="items-list">
+                <li th:each="item : ${items}">
+                    <a th:if="${itemType == 'year'}" 
+                       th:href="${#strings.concat(item, '.html')}" 
+                       th:text="${item}"></a>
+                    <a th:if="${itemType == 'person'}" 
+                       th:href="${#strings.concat('person_', #strings.replace(item, ' ', '_'), '.html')}" 
+                       th:text="${item}"></a>
+                    <a th:if="${itemType == 'category'}" 
+                       th:href="${#strings.concat('category_', #strings.replace(item, ' ', '_'), '.html')}" 
+                       th:text="${item}"></a>
+                    <span class="count" th:text="${'(' + counts.get(item) + ' entries)'}"></span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="no-items" th:if="${items.size() == 0}">
+            <p th:text="${'No ' + itemType + 's were found.'}">No items were found.</p>
+        </div>
+    </div>
+</body>
+</html>

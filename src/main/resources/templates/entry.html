@@ -22,8 +22,10 @@
         </span>
     </div>
     <hr>
-    <div class="entry-body" th:utext="${body}">
 
+    <div class="entry-body">
+        <span th:if="${#strings.isEmpty(body)}">[Empty body]</span>
+        <span th:unless="${#strings.isEmpty(body)}" th:utext="${body}"></span>
     </div>
     <div class="attachments" th:if="${attachments.size() > 0}">
         <hr>

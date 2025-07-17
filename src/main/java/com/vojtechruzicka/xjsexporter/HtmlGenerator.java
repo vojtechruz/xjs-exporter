@@ -52,6 +52,46 @@ public class HtmlGenerator {
         }
     }
 
+    /**
+     * Sets up common context variables used across multiple templates
+     */
+    private void setupCommonContext(Context context, Metadata metadata, List<Entry> allEntries, 
+                                   String pageType, String currentItem, String pageTitle) {
+        // Get all available categories, persons, and years for navigation
+        List<String> allCategories = metadata.categories().values().stream()
+                .map(CategoryMetadata::title)
+                .distinct()
+                .sorted(czechCollator::compare)
+                .toList();
+                
+        List<String> allPersons = metadata.people().values().stream()
+                .map(PersonMetadata::getFullName)
+                .distinct()
+                .sorted(czechCollator::compare)
+                .toList();
+                
+        List<String> allYears = allEntries.stream()
+                .map(e -> String.valueOf(e.created().getYear()))
+                .distinct()
+                .sorted()
+                .toList().reversed();
+        
+        // Add CSS content
+        context.setVariable("cssContent", getCssContent());
+        
+        // Add navigation variables
+        context.setVariable("persons", allPersons);
+        context.setVariable("categories", allCategories);
+        context.setVariable("years", allYears);
+        context.setVariable("pageType", pageType);
+        context.setVariable("currentItem", currentItem);
+        context.setVariable("pageTitle", pageTitle);
+        
+        // Set filtered lists to all lists by default (for list pages)
+        context.setVariable("filteredPersons", allPersons);
+        context.setVariable("filteredCategories", allCategories);
+        context.setVariable("filteredYears", allYears);
+    }
 
     public String generateEntryPage(String title, LocalDateTime created, String htmlBody, List<String> categories, List<String> persons, List<Attachment> attachments) {
         Context context = new Context();
@@ -70,11 +110,6 @@ public class HtmlGenerator {
     }
 
     public String generateMainPage(Metadata metadata, List<Entry> entries, String pageType, String currentItem) {
-        // Get all available categories, persons, and years
-        List<String> allCategories = metadata.categories().values().stream().map(CategoryMetadata::title).distinct().sorted(czechCollator::compare).toList();
-        List<String> allPersons = metadata.people().values().stream().map(PersonMetadata::getFullName).distinct().sorted(czechCollator::compare).toList();
-        List<String> allYears = entries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList();
-
         // Create filtered lists based on the current entries
         List<String> filteredCategories = entries.stream()
                 .flatMap(e -> e.categories().stream())
@@ -96,21 +131,6 @@ public class HtmlGenerator {
 
         // Set up the context
         Context context = new Context();
-        context.setVariable("cssContent", getCssContent());
-
-        context.setVariable("journalEntries", entries);
-        context.setVariable("persons", allPersons);
-        context.setVariable("categories", allCategories);
-        context.setVariable("years", allYears);
-        
-        // Add filtered lists
-        context.setVariable("filteredPersons", filteredPersons);
-        context.setVariable("filteredCategories", filteredCategories);
-        context.setVariable("filteredYears", filteredYears);
-        
-        // Add page type and current item
-        context.setVariable("pageType", pageType);
-        context.setVariable("currentItem", currentItem);
         
         // Set page title based on page type
         String pageTitle = "Journal Entries";
@@ -121,7 +141,17 @@ public class HtmlGenerator {
         } else if (pageType.equals("year") && currentItem != null) {
             pageTitle = "Entries for Year: " + currentItem;
         }
-        context.setVariable("pageTitle", pageTitle);
+        
+        // Setup common context variables
+        setupCommonContext(context, metadata, entries, pageType, currentItem, pageTitle);
+        
+        // Add journal entries
+        context.setVariable("journalEntries", entries);
+        
+        // Override filtered lists with actual filtered data
+        context.setVariable("filteredPersons", filteredPersons);
+        context.setVariable("filteredCategories", filteredCategories);
+        context.setVariable("filteredYears", filteredYears);
 
         return templateEngine.process("journal_entries_display", context);
     }
@@ -142,27 +172,14 @@ public class HtmlGenerator {
             personCounts.put(person, count);
         }
         
-        // Get all available categories, persons, and years for navigation
-        List<String> allCategories = metadata.categories().values().stream().map(CategoryMetadata::title).distinct().sorted(czechCollator::compare).toList();
-        List<String> allPersons = metadata.people().values().stream().map(PersonMetadata::getFullName).distinct().sorted(czechCollator::compare).toList();
-        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList().reversed();
-        
         Context context = new Context();
-        context.setVariable("cssContent", getCssContent());
+        
+        // Setup common context variables
+        setupCommonContext(context, metadata, allEntries, "persons_list", null, "Persons List");
+        
+        // Add specific variables for this template
         context.setVariable("persons", persons);
         context.setVariable("personCounts", personCounts);
-        
-        // Add navigation variables
-        context.setVariable("categories", allCategories);
-        context.setVariable("years", allYears);
-        context.setVariable("pageType", "persons_list");
-        context.setVariable("currentItem", null);
-        context.setVariable("pageTitle", "Persons List");
-        
-        // Empty filtered lists since this is a list page
-        context.setVariable("filteredPersons", allPersons);
-        context.setVariable("filteredCategories", allCategories);
-        context.setVariable("filteredYears", allYears);
         
         return templateEngine.process("persons_list", context);
     }
@@ -183,27 +200,14 @@ public class HtmlGenerator {
             categoryCounts.put(category, count);
         }
         
-        // Get all available categories, persons, and years for navigation
-        List<String> allCategories = metadata.categories().values().stream().map(CategoryMetadata::title).distinct().sorted(czechCollator::compare).toList();
-        List<String> allPersons = metadata.people().values().stream().map(PersonMetadata::getFullName).distinct().sorted(czechCollator::compare).toList();
-        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList().reversed();
-        
         Context context = new Context();
-        context.setVariable("cssContent", getCssContent());
+        
+        // Setup common context variables
+        setupCommonContext(context, metadata, allEntries, "categories_list", null, "Categories List");
+        
+        // Add specific variables for this template
         context.setVariable("categories", categories);
         context.setVariable("categoryCounts", categoryCounts);
-        
-        // Add navigation variables
-        context.setVariable("persons", allPersons);
-        context.setVariable("years", allYears);
-        context.setVariable("pageType", "categories_list");
-        context.setVariable("currentItem", null);
-        context.setVariable("pageTitle", "Categories List");
-        
-        // Empty filtered lists since this is a list page
-        context.setVariable("filteredPersons", allPersons);
-        context.setVariable("filteredCategories", allCategories);
-        context.setVariable("filteredYears", allYears);
         
         return templateEngine.process("categories_list", context);
     }
@@ -224,27 +228,14 @@ public class HtmlGenerator {
             yearCounts.put(year, count);
         }
         
-        // Get all available categories, persons, and years for navigation
-        List<String> allCategories = metadata.categories().values().stream().map(CategoryMetadata::title).distinct().sorted(czechCollator::compare).toList();
-        List<String> allPersons = metadata.people().values().stream().map(PersonMetadata::getFullName).distinct().sorted(czechCollator::compare).toList();
-        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList().reversed();
-        
         Context context = new Context();
-        context.setVariable("cssContent", getCssContent());
+        
+        // Setup common context variables
+        setupCommonContext(context, metadata, allEntries, "years_list", null, "Years List");
+        
+        // Add specific variables for this template
         context.setVariable("years", years);
         context.setVariable("yearCounts", yearCounts);
-        
-        // Add navigation variables
-        context.setVariable("persons", allPersons);
-        context.setVariable("categories", allCategories);
-        context.setVariable("pageType", "years_list");
-        context.setVariable("currentItem", null);
-        context.setVariable("pageTitle", "Years List");
-        
-        // Empty filtered lists since this is a list page
-        context.setVariable("filteredPersons", allPersons);
-        context.setVariable("filteredCategories", allCategories);
-        context.setVariable("filteredYears", allYears);
         
         return templateEngine.process("years_list", context);
     }
