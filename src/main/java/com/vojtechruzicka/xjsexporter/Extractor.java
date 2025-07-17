@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -96,7 +98,7 @@ public class Extractor {
         entries.forEach(entry -> {
             try {
                 Files.write(Path.of(finalTargetPath + entry.created().toLocalDate().toString() + "_" + entry.id() + ".html"), 
-                           entry.html().getBytes());
+                           entry.html().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
             } catch (IOException e) {
                 terminal.writer().println("Could not write entry file: " + entry.id() + ", Error: " + e);
             }
@@ -107,7 +109,7 @@ public class Extractor {
             try {
                 Path target = Path.of(finalTargetPath + "Attachments" + File.separator + attachmentMetadata.name());
                 Files.createDirectories(target.getParent());
-                Files.copy(Path.of(attachmentMetadata.absoluteSourcePath()), target);
+                Files.copy(Path.of(attachmentMetadata.absoluteSourcePath()), target, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 terminal.writer().println("Could not copy attachment file: " + attachmentMetadata.absoluteSourcePath() + ", Error: " + e);
             }
@@ -115,7 +117,7 @@ public class Extractor {
 
         // Write main index page
         try {
-            Files.write(Path.of(finalTargetPath + "index.html"), mainPage.getBytes());
+            Files.write(Path.of(finalTargetPath + "index.html"), mainPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             terminal.writer().println("Could not write main index file, Error: " + e);
         }
@@ -127,7 +129,7 @@ public class Extractor {
         entriesByYear.forEach((year, yearEntries) -> {
             String yearPage = htmlGenerator.generateMainPage(metadata, yearEntries, "year", String.valueOf(year));
             try {
-                Files.write(Path.of(finalTargetPath + year + ".html"), yearPage.getBytes());
+                Files.write(Path.of(finalTargetPath + year + ".html"), yearPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
             } catch (IOException e) {
                 terminal.writer().println("Could not write year file: " + year + ", Error: " + e);
             }
@@ -148,7 +150,7 @@ public class Extractor {
                 String personPage = htmlGenerator.generateMainPage(metadata, personEntries, "person", person);
                 try {
                     String fileName = "person_" + person.replace(' ', '_') + ".html";
-                    Files.write(Path.of(finalTargetPath + fileName), personPage.getBytes());
+                    Files.write(Path.of(finalTargetPath + fileName), personPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
                 } catch (IOException e) {
                     terminal.writer().println("Could not write person file: " + person + ", Error: " + e);
                 }
@@ -170,7 +172,7 @@ public class Extractor {
                 String categoryPage = htmlGenerator.generateMainPage(metadata, categoryEntries, "category", category);
                 try {
                     String fileName = "category_" + category.replace(' ', '_') + ".html";
-                    Files.write(Path.of(finalTargetPath + fileName), categoryPage.getBytes());
+                    Files.write(Path.of(finalTargetPath + fileName), categoryPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
                 } catch (IOException e) {
                     terminal.writer().println("Could not write category file: " + category + ", Error: " + e);
                 }
@@ -181,22 +183,22 @@ public class Extractor {
         try {
             // Persons list page
             String personsListPage = htmlGenerator.generatePersonsListPage(metadata, entries);
-            Files.write(Path.of(finalTargetPath + "persons_list.html"), personsListPage.getBytes());
+            Files.write(Path.of(finalTargetPath + "persons_list.html"), personsListPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
             
             // Categories list page
             String categoriesListPage = htmlGenerator.generateCategoriesListPage(metadata, entries);
-            Files.write(Path.of(finalTargetPath + "categories_list.html"), categoriesListPage.getBytes());
+            Files.write(Path.of(finalTargetPath + "categories_list.html"), categoriesListPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
             
             // Years list page
             String yearsListPage = htmlGenerator.generateYearsListPage(entries, metadata);
-            Files.write(Path.of(finalTargetPath + "years_list.html"), yearsListPage.getBytes());
+            Files.write(Path.of(finalTargetPath + "years_list.html"), yearsListPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             terminal.writer().println("Could not write list pages, Error: " + e);
         }
 
         // Write all entries to a single file (for backup/debugging)
         try {
-            Files.write(Path.of(finalTargetPath + "all.txt"), sb.toString().getBytes());
+            Files.write(Path.of(finalTargetPath + "all.txt"), sb.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             terminal.writer().println("Could not write all.txt file, Error: " + e);
         }

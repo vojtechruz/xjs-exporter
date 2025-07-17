@@ -9,7 +9,7 @@
     <h1 th:text="${title}"></h1>
     <div class="date-created">
         <span class="metadata-title">Date created:</span>
-        <span th:text="${dateCreated}"></span>
+        <span th:text="${#temporals.format(dateCreated, 'dd. MM. yyyy')}"></span>
     </div>
     <div class="categories" th:if="${categories.size() > 0}">
         <span class="metadata-title">Categories:</span>

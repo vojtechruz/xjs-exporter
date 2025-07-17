@@ -81,7 +81,7 @@
 
     <!-- Content Section -->
     <div class="content">
-        <h1>Journal Entries</h1>
+        <h1 th:text="'Journal Entries' + (${currentItem} != null ? ' - ' + ${currentItem} : '')"></h1>
 
         <div class="journal-list" th:if="${journalEntries.size() > 0}">
             <div class="journal-entry" th:each="entry : ${journalEntries}">
@@ -92,7 +92,7 @@
                 <div class="metadata">
                     <div class="date-created">
                         <span class="metadata-title">Date created:</span>
-                        <span th:text="${entry.created}"></span>
+                        <span th:text="${#temporals.format(entry.created, 'dd. MM. yyyy')}"></span>
                     </div>
                     <div class="categories" th:if="${entry.categories.size() > 0}">
                         <span class="metadata-title">Categories:</span>
