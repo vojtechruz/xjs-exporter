@@ -1,10 +1,7 @@
 package com.vojtechruzicka.xjsexporter;
 
 import com.vojtechruzicka.xjsexporter.config.ExporterConfiguration;
-import com.vojtechruzicka.xjsexporter.model.Attachment;
-import com.vojtechruzicka.xjsexporter.model.Entry;
-import com.vojtechruzicka.xjsexporter.model.EntryMetadata;
-import com.vojtechruzicka.xjsexporter.model.Metadata;
+import com.vojtechruzicka.xjsexporter.model.*;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.terminal.Terminal;
@@ -24,7 +21,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -66,7 +63,7 @@ public class Extractor {
 
         StringBuilder sb = new StringBuilder();
 
-        List<Entry> entries = metadata.entries().values().stream().map(entryMetadata -> {
+        List<Entry> entries = metadata.entries().values().stream().sorted(Comparator.comparing(EntryMetadata::dateCreated).reversed()).map(entryMetadata -> {
             String id = entryMetadata.id();
             String title = entryMetadata.title();
             String location = entryMetadata.location();
@@ -76,7 +73,7 @@ public class Extractor {
             List<String> persons = entryMetadata.personIds().stream().map(personId -> metadata.people().get(personId).getFullName()).toList();
 
             String htmlBody = getHtmlBody(entryMetadata);
-            String html = htmlGenerator.generateHtml(entryMetadata.title(), dateCreated, htmlBody, categories, persons, attachments);
+            String html = htmlGenerator.generateEntryPage(entryMetadata.title(), dateCreated, htmlBody, categories, persons, attachments);
 
             sb.append(html);
 
@@ -137,7 +134,7 @@ public class Extractor {
 
         // Generate person-based pages
         List<String> allPersons = metadata.people().values().stream()
-                .map(person -> person.getFullName())
+                .map(PersonMetadata::getFullName)
                 .distinct()
                 .toList();
         
@@ -159,7 +156,7 @@ public class Extractor {
 
         // Generate category-based pages
         List<String> allCategories = metadata.categories().values().stream()
-                .map(category -> category.title())
+                .map(CategoryMetadata::title)
                 .distinct()
                 .toList();
         

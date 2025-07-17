@@ -4,26 +4,29 @@ import com.vojtechruzicka.xjsexporter.config.ExporterConfiguration;
 import com.vojtechruzicka.xjsexporter.model.Attachment;
 import com.vojtechruzicka.xjsexporter.model.Entry;
 import com.vojtechruzicka.xjsexporter.model.Metadata;
+import com.vojtechruzicka.xjsexporter.model.PersonMetadata;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.text.Collator;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class HtmlGenerator {
 
     private final TemplateEngine templateEngine;
 
+    private final Collator czechCollator = Collator.getInstance(Locale.of("cs", "CZ"));
+
     public HtmlGenerator(TemplateEngine templateEngine) {
         this.templateEngine = templateEngine;
+        czechCollator.setStrength(Collator.PRIMARY);
     }
 
     public static void main(String[] args) {
@@ -32,28 +35,25 @@ public class HtmlGenerator {
 
         HtmlGenerator generator = new HtmlGenerator(templateEngine);
 
-        String html = generator.generateHtml("My Title", LocalDateTime.now(),"<h1>Hello world</h1>", List.of("CAT1", "CAT2"), List.of("PERSON1", "PERSON2", "PERSON3"), List.of(new Attachment("C:\\temp\\file.txt","ATACHMENT1","temp\\file.txt")));
+        String html = generator.generateEntryPage("My Title", LocalDateTime.now(),"<h1>Hello world</h1>", List.of("CAT1", "CAT2"), List.of("PERSON1", "PERSON2", "PERSON3"), List.of(new Attachment("C:\\temp\\file.txt","ATACHMENT1","temp\\file.txt")));
         System.out.println(html);
     }
 
     private String getCssContent() {
         try (var resource = getClass().getResourceAsStream("/static/css/styles.css")) {
             if (resource != null) {
-                String css = new String(resource.readAllBytes());
 
-                return css;
+                return new String(resource.readAllBytes());
             } else {
                 return "/* CSS file not found */";
             }
         } catch (IOException e) {
             return "/* CSS file not found: " + e.getMessage() + " */";
         }
-
-
     }
 
 
-    public String generateHtml(String title, LocalDateTime created, String htmlBody, List<String> categories, List<String> persons, List<Attachment> attachments) {
+    public String generateEntryPage(String title, LocalDateTime created, String htmlBody, List<String> categories, List<String> persons, List<Attachment> attachments) {
         Context context = new Context();
         context.setVariable("title", title);
         context.setVariable("body", htmlBody);
@@ -71,25 +71,28 @@ public class HtmlGenerator {
 
     public String generateMainPage(Metadata metadata, List<Entry> entries, String pageType, String currentItem) {
         // Get all available categories, persons, and years
-        List<String> allCategories = metadata.categories().values().stream().map(c -> c.title()).distinct().sorted().toList();
-        List<String> allPersons = metadata.people().values().stream().map(c -> c.getFullName()).distinct().sorted().toList();
+        List<String> allCategories = metadata.categories().values().stream().map(CategoryMetadata::title).distinct().sorted(czechCollator::compare).toList();
+        List<String> allPersons = metadata.people().values().stream().map(PersonMetadata::getFullName).distinct().sorted(czechCollator::compare).toList();
         List<String> allYears = entries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList();
 
         // Create filtered lists based on the current entries
         List<String> filteredCategories = entries.stream()
                 .flatMap(e -> e.categories().stream())
                 .distinct()
+                .sorted(czechCollator::compare)
                 .toList();
         
         List<String> filteredPersons = entries.stream()
                 .flatMap(e -> e.persons().stream())
                 .distinct()
+                .sorted(czechCollator::compare)
                 .toList();
         
         List<String> filteredYears = entries.stream()
                 .map(e -> String.valueOf(e.created().getYear()))
                 .distinct()
-                .toList();
+                .sorted()
+                .toList().reversed();
 
         // Set up the context
         Context context = new Context();
@@ -125,9 +128,9 @@ public class HtmlGenerator {
     
     public String generatePersonsListPage(Metadata metadata, List<Entry> allEntries) {
         List<String> persons = metadata.people().values().stream()
-                .map(p -> p.getFullName())
+                .map(PersonMetadata::getFullName)
                 .distinct()
-                .sorted()
+                .sorted(czechCollator::compare)
                 .toList();
         
         // Count entries for each person
@@ -140,9 +143,9 @@ public class HtmlGenerator {
         }
         
         // Get all available categories, persons, and years for navigation
-        List<String> allCategories = metadata.categories().values().stream().map(c -> c.title()).distinct().sorted().toList();
-        List<String> allPersons = metadata.people().values().stream().map(c -> c.getFullName()).distinct().sorted().toList();
-        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList();
+        List<String> allCategories = metadata.categories().values().stream().map(CategoryMetadata::title).distinct().sorted(czechCollator::compare).toList();
+        List<String> allPersons = metadata.people().values().stream().map(PersonMetadata::getFullName).distinct().sorted(czechCollator::compare).toList();
+        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList().reversed();
         
         Context context = new Context();
         context.setVariable("cssContent", getCssContent());
@@ -166,9 +169,9 @@ public class HtmlGenerator {
     
     public String generateCategoriesListPage(Metadata metadata, List<Entry> allEntries) {
         List<String> categories = metadata.categories().values().stream()
-                .map(c -> c.title())
+                .map(CategoryMetadata::title)
                 .distinct()
-                .sorted()
+                .sorted(czechCollator::compare)
                 .toList();
         
         // Count entries for each category
@@ -181,9 +184,9 @@ public class HtmlGenerator {
         }
         
         // Get all available categories, persons, and years for navigation
-        List<String> allCategories = metadata.categories().values().stream().map(c -> c.title()).distinct().sorted().toList();
-        List<String> allPersons = metadata.people().values().stream().map(c -> c.getFullName()).distinct().sorted().toList();
-        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList();
+        List<String> allCategories = metadata.categories().values().stream().map(CategoryMetadata::title).distinct().sorted(czechCollator::compare).toList();
+        List<String> allPersons = metadata.people().values().stream().map(PersonMetadata::getFullName).distinct().sorted(czechCollator::compare).toList();
+        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList().reversed();
         
         Context context = new Context();
         context.setVariable("cssContent", getCssContent());
@@ -222,9 +225,9 @@ public class HtmlGenerator {
         }
         
         // Get all available categories, persons, and years for navigation
-        List<String> allCategories = metadata.categories().values().stream().map(c -> c.title()).distinct().sorted().toList();
-        List<String> allPersons = metadata.people().values().stream().map(c -> c.getFullName()).distinct().sorted().toList();
-        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList();
+        List<String> allCategories = metadata.categories().values().stream().map(CategoryMetadata::title).distinct().sorted(czechCollator::compare).toList();
+        List<String> allPersons = metadata.people().values().stream().map(PersonMetadata::getFullName).distinct().sorted(czechCollator::compare).toList();
+        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().sorted().toList().reversed();
         
         Context context = new Context();
         context.setVariable("cssContent", getCssContent());
