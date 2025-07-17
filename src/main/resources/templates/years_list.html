@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Years List</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<!-- Outer container to center and limit width -->
+<div class="container">
+    <!-- Navigation Panel -->
+    <div class="navigation-panel">
+        <h2>Browse By</h2>
+
+        <!-- Links to list pages -->
+        <ul class="list-pages">
+            <li><a href="index.html">All Entries</a></li>
+            <li><a href="persons_list.html">Persons List</a></li>
+            <li><a href="categories_list.html">Categories List</a></li>
+            <li><strong>Years List</strong></li>
+        </ul>
+    </div>
+
+    <!-- Content Section -->
+    <div class="content">
+        <h1>All Years</h1>
+
+        <div class="list-container" th:if="${years.size() > 0}">
+            <ul class="items-list">
+                <li th:each="year : ${years}">
+                    <a th:href="${#strings.concat(year, '.html')}" 
+                       th:text="${year}"></a>
+                    <span class="count" th:text="${'(' + yearCounts.get(year) + ' entries)'}"></span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="no-items" th:if="${years.size() == 0}">
+            <p>No years were found.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

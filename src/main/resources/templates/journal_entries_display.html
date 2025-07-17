@@ -35,12 +35,12 @@
             <p th:text="${currentItem}"></p>
         </div>
 
-        <!-- Persons - only show if not on a person page or show filtered list on category page -->
+        <!-- Persons - only show if not on a person page or show filtered list -->
         <div th:if="${pageType != 'person'}">
             <h3>Persons</h3>
             <ul>
                 <li th:each="person : ${filteredPersons != null ? filteredPersons : persons}">
-                    <a th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}" 
+                    <a th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}"
                        th:text="${person}"></a>
                 </li>
                 <li th:if="${(filteredPersons != null ? filteredPersons : persons).size() == 0}">
@@ -49,12 +49,12 @@
             </ul>
         </div>
 
-        <!-- Categories - only show if not on a category page or show filtered list on person page -->
+        <!-- Categories - only show if not on a category page or show filtered list -->
         <div th:if="${pageType != 'category'}">
             <h3>Categories</h3>
             <ul>
                 <li th:each="category : ${filteredCategories != null ? filteredCategories : categories}">
-                    <a th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}" 
+                    <a th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}"
                        th:text="${category}"></a>
                 </li>
                 <li th:if="${(filteredCategories != null ? filteredCategories : categories).size() == 0}">
@@ -63,18 +63,21 @@
             </ul>
         </div>
 
-        <!-- Years - always show but filter based on current view -->
-        <h3>Years</h3>
-        <ul>
-            <li th:each="year : ${filteredYears != null ? filteredYears : years}">
-                <a th:href="${#strings.concat(year, '.html')}"
-                   th:text="${year}"></a>
-            </li>
-            <li th:if="${(filteredYears != null ? filteredYears : years).size() == 0}">
-                <span>No years available.</span>
-            </li>
-        </ul>
+        <!-- Years - only show if not on a year page or show filtered list -->
+        <div th:if="${pageType != 'year'}">
+            <h3>Years</h3>
+            <ul>
+                <li th:each="year : ${filteredYears != null ? filteredYears : years}">
+                    <a th:href="${#strings.concat(year, '.html')}"
+                       th:text="${year}"></a>
+                </li>
+                <li th:if="${(filteredYears != null ? filteredYears : years).size() == 0}">
+                    <span>No years available.</span>
+                </li>
+            </ul>
+        </div>
     </div>
+
 
     <!-- Content Section -->
     <div class="content">
@@ -83,7 +86,7 @@
         <div class="journal-list" th:if="${journalEntries.size() > 0}">
             <div class="journal-entry" th:each="entry : ${journalEntries}">
                 <h2 class="title">
-                    <a th:href="${entry.created.toLocalDate() + '_' + entry.id + '.html'}" 
+                    <a th:href="${entry.created.toLocalDate() + '_' + entry.id + '.html'}"
                        th:text="${entry.title}"></a>
                 </h2>
                 <div class="metadata">
