@@ -139,9 +139,27 @@ public class HtmlGenerator {
             personCounts.put(person, count);
         }
         
+        // Get all available categories, persons, and years for navigation
+        List<String> allCategories = metadata.categories().values().stream().map(c -> c.title()).distinct().toList();
+        List<String> allPersons = metadata.people().values().stream().map(c -> c.getFullName()).distinct().toList();
+        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().toList();
+        
         Context context = new Context();
+        context.setVariable("cssContent", getCssContent());
         context.setVariable("persons", persons);
         context.setVariable("personCounts", personCounts);
+        
+        // Add navigation variables
+        context.setVariable("categories", allCategories);
+        context.setVariable("years", allYears);
+        context.setVariable("pageType", "persons_list");
+        context.setVariable("currentItem", null);
+        context.setVariable("pageTitle", "Persons List");
+        
+        // Empty filtered lists since this is a list page
+        context.setVariable("filteredPersons", List.of());
+        context.setVariable("filteredCategories", List.of());
+        context.setVariable("filteredYears", List.of());
         
         return templateEngine.process("persons_list", context);
     }
@@ -162,14 +180,32 @@ public class HtmlGenerator {
             categoryCounts.put(category, count);
         }
         
+        // Get all available categories, persons, and years for navigation
+        List<String> allCategories = metadata.categories().values().stream().map(c -> c.title()).distinct().toList();
+        List<String> allPersons = metadata.people().values().stream().map(c -> c.getFullName()).distinct().toList();
+        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().toList();
+        
         Context context = new Context();
+        context.setVariable("cssContent", getCssContent());
         context.setVariable("categories", categories);
         context.setVariable("categoryCounts", categoryCounts);
+        
+        // Add navigation variables
+        context.setVariable("persons", allPersons);
+        context.setVariable("years", allYears);
+        context.setVariable("pageType", "categories_list");
+        context.setVariable("currentItem", null);
+        context.setVariable("pageTitle", "Categories List");
+        
+        // Empty filtered lists since this is a list page
+        context.setVariable("filteredPersons", List.of());
+        context.setVariable("filteredCategories", List.of());
+        context.setVariable("filteredYears", List.of());
         
         return templateEngine.process("categories_list", context);
     }
     
-    public String generateYearsListPage(List<Entry> allEntries) {
+    public String generateYearsListPage(List<Entry> allEntries, Metadata metadata) {
         List<String> years = allEntries.stream()
                 .map(e -> String.valueOf(e.created().getYear()))
                 .distinct()
@@ -185,9 +221,27 @@ public class HtmlGenerator {
             yearCounts.put(year, count);
         }
         
+        // Get all available categories, persons, and years for navigation
+        List<String> allCategories = metadata.categories().values().stream().map(c -> c.title()).distinct().toList();
+        List<String> allPersons = metadata.people().values().stream().map(c -> c.getFullName()).distinct().toList();
+        List<String> allYears = allEntries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().toList();
+        
         Context context = new Context();
+        context.setVariable("cssContent", getCssContent());
         context.setVariable("years", years);
         context.setVariable("yearCounts", yearCounts);
+        
+        // Add navigation variables
+        context.setVariable("persons", allPersons);
+        context.setVariable("categories", allCategories);
+        context.setVariable("pageType", "years_list");
+        context.setVariable("currentItem", null);
+        context.setVariable("pageTitle", "Years List");
+        
+        // Empty filtered lists since this is a list page
+        context.setVariable("filteredPersons", List.of());
+        context.setVariable("filteredCategories", List.of());
+        context.setVariable("filteredYears", List.of());
         
         return templateEngine.process("years_list", context);
     }

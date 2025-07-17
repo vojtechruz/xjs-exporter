@@ -188,7 +188,7 @@ public class Extractor {
             Files.write(Path.of(finalTargetPath + "categories_list.html"), categoriesListPage.getBytes());
             
             // Years list page
-            String yearsListPage = htmlGenerator.generateYearsListPage(entries);
+            String yearsListPage = htmlGenerator.generateYearsListPage(entries, metadata);
             Files.write(Path.of(finalTargetPath + "years_list.html"), yearsListPage.getBytes());
         } catch (IOException e) {
             terminal.writer().println("Could not write list pages, Error: " + e);
