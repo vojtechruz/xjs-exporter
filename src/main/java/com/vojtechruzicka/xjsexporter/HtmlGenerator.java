@@ -37,4 +37,21 @@ public class HtmlGenerator {
 
         return templateEngine.process("entry", context);
     }
+
+    public String generateMainPage(Metadata metadata, List<Entry> entries) {
+
+        List<String> categories = metadata.categories().values().stream().map( c -> c.title()).distinct().toList();
+        List<String> persons= metadata.people().values().stream().map( c -> c.getFullName()).distinct().toList();
+        List<String> years = entries.stream().map(e -> String.valueOf(e.created().getYear())).distinct().toList();
+
+
+        Context context = new Context();
+        context.setVariable("journalEntries", entries);
+        context.setVariable("persons", persons);
+        context.setVariable("categories", categories);
+        context.setVariable("years", years);
+
+
+        return templateEngine.process("journal_entries_display", context);
+    }
 }

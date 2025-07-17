@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Journal Entries</title>
+    <link rel="stylesheet" href="/css/styles.css"> <!-- Optional: Link your CSS file -->
+    <style>
+        /* General body settings */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center; /* Centers the content horizontally */
+            background-color: #f5f5f5; /* Light gray background */
+        }
+
+        .container {
+            display: flex;
+            max-width: 1200px; /* Restricts the width of the content */
+            width: 100%;
+            margin: 20px;
+            background: #ffffff; /* White content background */
+            box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2); /* Adds a subtle shadow */
+            border-radius: 8px; /* Rounded edges for the content */
+        }
+
+        .navigation-panel {
+            width: 25%; /* Adjust navigation panel width */
+            background-color: #f8f9fa; /* Light gray navigation background */
+            padding: 15px;
+            box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.1); /* Subtle inner shadow */
+            border-right: 1px solid #e0e0e0;
+            border-radius: 8px 0 0 8px; /* Rounded left corners */
+        }
+
+        .navigation-panel h2, .navigation-panel h3 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #333333;
+        }
+
+        .navigation-panel ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .navigation-panel li {
+            margin-bottom: 10px;
+        }
+
+        .navigation-panel a {
+            text-decoration: none;
+            color: #007bff; /* Bootstrap-style link color */
+            font-size: 14px;
+        }
+
+        .navigation-panel a:hover {
+            text-decoration: underline;
+        }
+
+        .content {
+            width: 75%; /* Adjust content width */
+            padding: 20px;
+        }
+
+        .journal-entry {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+
+        .journal-entry:last-child {
+            border-bottom: none;
+        }
+
+        .journal-entry h2 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+        }
+
+        .journal-entry .metadata-title {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .journal-entry .metadata {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .journal-entry .view-details a {
+            font-size: 14px;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .journal-entry .view-details a:hover {
+            text-decoration: underline;
+        }
+
+        .content h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .no-entries {
+            text-align: center;
+            font-size: 16px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<!-- Outer container to center and limit width -->
+<div class="container">
+    <!-- Navigation Panel -->
+    <div class="navigation-panel">
+        <h2>Browse By</h2>
+
+        <!-- Persons -->
+        <h3>Persons</h3>
+        <ul>
+            <li th:each="person : ${persons}">
+                <a  th:text="${person}"></a>
+            </li>
+            <li th:if="${persons.size() == 0}">
+                <span>No persons available.</span>
+            </li>
+        </ul>
+
+        <!-- Categories -->
+        <h3>Categories</h3>
+        <ul>
+            <li th:each="category : ${categories}">
+                <a th:text="${category}"></a>
+            </li>
+            <li th:if="${categories.size() == 0}">
+                <span>No categories available.</span>
+            </li>
+        </ul>
+
+        <!-- Years -->
+        <h3>Years</h3>
+        <ul>
+            <li th:each="year : ${years}">
+                <a th:href="${#strings.concat(year, '.html')}"
+                   th:text="${year}"></a>
+            </li>
+            <li th:if="${years.size() == 0}">
+                <span>No years available.</span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Content Section -->
+    <div class="content">
+        <h1>Journal Entries</h1>
+
+        <div class="journal-list" th:if="${journalEntries.size() > 0}">
+            <div class="journal-entry" th:each="entry : ${journalEntries}">
+                <h2 class="title">
+                    <a  th:text="${entry.title}"></a>
+                </h2>
+                <div class="metadata">
+                    <div class="date-created">
+                        <span class="metadata-title">Date created:</span>
+                        <span th:text="${entry.created}"></span>
+                    </div>
+                    <div class="categories" th:if="${entry.categories.size() > 0}">
+                        <span class="metadata-title">Categories:</span>
+                        <span class="category" th:each="category : ${entry.categories}" th:text="${category}"></span>
+                    </div>
+                    <div class="persons" th:if="${entry.persons.size() > 0}">
+                        <span class="metadata-title">Persons:</span>
+                        <span class="person" th:each="person : ${entry.persons}" th:text="${person}"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="no-entries" th:if="${journalEntries.size() == 0}">
+            <p>No journal entries found.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

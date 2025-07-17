@@ -38,7 +38,7 @@ public class Extractor {
         // TODO extract as json also
 
         String path = "C:\\Users\\vojte\\Dropbox\\_Archiv\\Denik\\XJS\\Deník\\";
-        String targetPath = "C:\\tmp\\denik\\";
+        String targetPath = "C:\\projects\\xjs-exporter\\OUT\\";
 
         Metadata metadata;
 
@@ -67,6 +67,8 @@ public class Extractor {
             return new Entry(id, title, dateCreated, html, persons, categories, attachments, location);
         }).toList();
 
+        String s = htmlGenerator.generateMainPage(metadata, entries);
+
         entries.forEach(entry -> {
             try {
                 Files.write(Path.of(targetPath+entry.created().toLocalDate().toString()+"_"+entry.id()+".html"), entry.html().getBytes());
@@ -87,6 +89,7 @@ public class Extractor {
 
         try {
             Files.write(Path.of(targetPath + "all.txt"), sb.toString().getBytes());
+            Files.write(Path.of(targetPath + "_root.html"), s.getBytes());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
