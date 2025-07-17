@@ -12,6 +12,7 @@ import org.jline.terminal.TerminalBuilder;
 import org.jsoup.Jsoup;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
+import org.springframework.shell.standard.ShellOption;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -21,7 +22,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @ShellComponent
@@ -37,18 +41,23 @@ public class Extractor {
         this.terminal = terminal;
     }
 
-    @ShellMethod(value = "Extracts something", key = "extract")
-    public String extract() {
+    @ShellMethod(value = "Extracts journal entries from XJS format", key = "extract")
+    public String extract(
+            @ShellOption(defaultValue = "C:\\Users\\vojte\\Dropbox\\_Archiv\\Denik\\XJS\\Deník\\", 
+                    help = "Source directory containing XJS journal entries") String sourcePath,
+            @ShellOption(defaultValue = "C:\\projects\\xjs-exporter\\OUT\\", 
+                    help = "Target directory for generated HTML files") String targetPath) {
 
         // TODO extract as json also
 
-        String path = "C:\\Users\\vojte\\Dropbox\\_Archiv\\Denik\\XJS\\Deník\\";
-        String targetPath = "C:\\projects\\xjs-exporter\\OUT\\";
+        // Ensure paths end with separator
+        final String finalSourcePath = sourcePath.endsWith(File.separator) ? sourcePath : sourcePath + File.separator;
+        final String finalTargetPath = targetPath.endsWith(File.separator) ? targetPath : targetPath + File.separator;
 
         Metadata metadata;
 
         try {
-            metadata = metadataExtractor.extractMetadata(path);
+            metadata = metadataExtractor.extractMetadata(finalSourcePath);
         } catch (IOException e) {
             return MessageFormat.format("Failed to extract metadata: {0}", e.getMessage());
         }
@@ -72,19 +81,31 @@ public class Extractor {
             return new Entry(id, title, dateCreated, html, persons, categories, attachments, location);
         }).toList();
 
-        String s = htmlGenerator.generateMainPage(metadata, entries);
+        // Generate main index page
+        String mainPage = htmlGenerator.generateMainPage(metadata, entries);
 
+        // Create target directory if it doesn't exist
+        try {
+            Files.createDirectories(Path.of(finalTargetPath));
+        } catch (IOException e) {
+            terminal.writer().println("Could not create target directory: " + finalTargetPath + ", Error: " + e);
+            return "Failed to create target directory: " + e.getMessage();
+        }
+
+        // Write individual entry pages
         entries.forEach(entry -> {
             try {
-                Files.write(Path.of(targetPath+entry.created().toLocalDate().toString()+"_"+entry.id()+".html"), entry.html().getBytes());
+                Files.write(Path.of(finalTargetPath + entry.created().toLocalDate().toString() + "_" + entry.id() + ".html"), 
+                           entry.html().getBytes());
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                terminal.writer().println("Could not write entry file: " + entry.id() + ", Error: " + e);
             }
         });
 
+        // Copy attachment files
         metadata.attachments().values().forEach(attachmentMetadata -> {
             try {
-                Path target = Path.of(targetPath + "Attachments" + File.separator + attachmentMetadata.name());
+                Path target = Path.of(finalTargetPath + "Attachments" + File.separator + attachmentMetadata.name());
                 Files.createDirectories(target.getParent());
                 Files.copy(Path.of(attachmentMetadata.absoluteSourcePath()), target);
             } catch (IOException e) {
@@ -92,11 +113,75 @@ public class Extractor {
             }
         });
 
+        // Write main index page
         try {
-            Files.write(Path.of(targetPath + "all.txt"), sb.toString().getBytes());
-            Files.write(Path.of(targetPath + "_root.html"), s.getBytes());
+            Files.write(Path.of(finalTargetPath + "index.html"), mainPage.getBytes());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            terminal.writer().println("Could not write main index file, Error: " + e);
+        }
+
+        // Generate year-based pages
+        Map<Integer, List<Entry>> entriesByYear = entries.stream()
+                .collect(Collectors.groupingBy(entry -> entry.created().getYear()));
+        
+        entriesByYear.forEach((year, yearEntries) -> {
+            String yearPage = htmlGenerator.generateMainPage(metadata, yearEntries);
+            try {
+                Files.write(Path.of(finalTargetPath + year + ".html"), yearPage.getBytes());
+            } catch (IOException e) {
+                terminal.writer().println("Could not write year file: " + year + ", Error: " + e);
+            }
+        });
+
+        // Generate person-based pages
+        List<String> allPersons = metadata.people().values().stream()
+                .map(person -> person.getFullName())
+                .distinct()
+                .toList();
+        
+        allPersons.forEach(person -> {
+            List<Entry> personEntries = entries.stream()
+                    .filter(entry -> entry.persons().contains(person))
+                    .toList();
+            
+            if (!personEntries.isEmpty()) {
+                String personPage = htmlGenerator.generateMainPage(metadata, personEntries);
+                try {
+                    String fileName = "person_" + person.replace(' ', '_') + ".html";
+                    Files.write(Path.of(finalTargetPath + fileName), personPage.getBytes());
+                } catch (IOException e) {
+                    terminal.writer().println("Could not write person file: " + person + ", Error: " + e);
+                }
+            }
+        });
+
+        // Generate category-based pages
+        List<String> allCategories = metadata.categories().values().stream()
+                .map(category -> category.title())
+                .distinct()
+                .toList();
+        
+        allCategories.forEach(category -> {
+            List<Entry> categoryEntries = entries.stream()
+                    .filter(entry -> entry.categories().contains(category))
+                    .toList();
+            
+            if (!categoryEntries.isEmpty()) {
+                String categoryPage = htmlGenerator.generateMainPage(metadata, categoryEntries);
+                try {
+                    String fileName = "category_" + category.replace(' ', '_') + ".html";
+                    Files.write(Path.of(finalTargetPath + fileName), categoryPage.getBytes());
+                } catch (IOException e) {
+                    terminal.writer().println("Could not write category file: " + category + ", Error: " + e);
+                }
+            }
+        });
+
+        // Write all entries to a single file (for backup/debugging)
+        try {
+            Files.write(Path.of(finalTargetPath + "all.txt"), sb.toString().getBytes());
+        } catch (IOException e) {
+            terminal.writer().println("Could not write all.txt file, Error: " + e);
         }
 
         return "Extract finished, " + entries.size() + " entries generated";
@@ -138,7 +223,14 @@ public class Extractor {
                 .system(false)                      // Do not use the system terminal
                 .build();
 
-        new Extractor(new MetadataExtractor(), new HtmlGenerator(new ExporterConfiguration().defaultTemplatingEngine()), terminal).extract();
+        // Use default paths
+        new Extractor(
+            new MetadataExtractor(), 
+            new HtmlGenerator(new ExporterConfiguration().defaultTemplatingEngine()), 
+            terminal
+        ).extract(
+            "C:\\Users\\vojte\\Dropbox\\_Archiv\\Denik\\XJS\\Deník\\",
+            "C:\\projects\\xjs-exporter\\OUT\\"
+        );
     }
-
 }
