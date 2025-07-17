@@ -1,38 +1,46 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
+<head th:replace="~{fragments/head :: head(pageTitle=${pageTitle})}">
     <meta charset="UTF-8">
-    <title th:text="${title}"></title>
-    <style th:utext="${cssContent}"></style>
+    <title>Entry</title>
 </head>
 <body>
-    <h1 th:text="${title}"></h1>
-    <div class="date-created">
-        <span class="metadata-title">Date created:</span>
-        <span th:text="${#temporals.format(dateCreated, 'dd. MM. yyyy')}"></span>
-    </div>
-    <div class="categories" th:if="${categories.size() > 0}">
-        <span class="metadata-title">Categories:</span>
-        <span class="category" th:each="category : ${categories}" th:text="${category}">
-        </span>
-    </div>
-    <div class="persons" th:if="${persons.size() > 0}">
-        <span class="metadata-title">Persons:</span>
-        <span class="person" th:each="person : ${persons}" th:text="${person}">
-        </span>
-    </div>
-    <hr>
+<!-- Outer container to center and limit width -->
+<div class="container">
+    <!-- Include Navigation Panel Fragment -->
+    <div th:replace="~{fragments/navigation :: navigation-panel(pageType=${pageType}, currentItem=${currentItem}, persons=${persons}, categories=${categories}, years=${years}, filteredPersons=${filteredPersons}, filteredCategories=${filteredCategories}, filteredYears=${filteredYears})}"></div>
 
-    <div class="entry-body">
-        <span th:if="${#strings.isEmpty(body)}">[Empty body]</span>
-        <span th:unless="${#strings.isEmpty(body)}" th:utext="${body}"></span>
-    </div>
-    <div class="attachments" th:if="${attachments.size() > 0}">
+    <!-- Content Section -->
+    <div class="content">
+        <h1 th:text="${title}"></h1>
+        <div class="date-created">
+            <span class="metadata-title">Date created:</span>
+            <span th:text="${#temporals.format(dateCreated, 'dd. MM. yyyy')}"></span>
+        </div>
+        <div class="categories" th:if="${categories.size() > 0}">
+            <span class="metadata-title">Categories:</span>
+            <span class="category" th:each="category : ${categories}" th:text="${category}">
+            </span>
+        </div>
+        <div class="persons" th:if="${persons.size() > 0}">
+            <span class="metadata-title">Persons:</span>
+            <span class="person" th:each="person : ${persons}" th:text="${person}">
+            </span>
+        </div>
         <hr>
-        <div class="metadata-title">Attachments:</div>
-        <span  class="attachment" th:each="attachment : ${attachments}">
-            <a th:href="${attachment.absoluteSourcePath}" th:text="${attachment.name}"></a>
-        </span>
+
+        <div class="entry-body">
+            <span th:if="${#strings.isEmpty(body)}">[Empty body]</span>
+            <span th:unless="${#strings.isEmpty(body)}" th:utext="${body}"></span>
+        </div>
+        <div class="attachments" th:if="${attachments.size() > 0}">
+            <hr>
+            <div class="metadata-title">Attachments:</div>
+            <span class="attachment" th:each="attachment : ${attachments}">
+                <a th:href="${attachment.absoluteSourcePath}" th:text="${attachment.name}"></a>
+            </span>
+        </div>
     </div>
+</div>
 </body>
 </html>

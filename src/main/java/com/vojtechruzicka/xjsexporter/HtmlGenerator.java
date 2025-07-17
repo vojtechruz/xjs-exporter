@@ -35,7 +35,7 @@ public class HtmlGenerator {
 
         HtmlGenerator generator = new HtmlGenerator(templateEngine);
 
-        String html = generator.generateEntryPage("My Title", LocalDateTime.now(),"<h1>Hello world</h1>", List.of("CAT1", "CAT2"), List.of("PERSON1", "PERSON2", "PERSON3"), List.of(new Attachment("C:\\temp\\file.txt","ATACHMENT1","temp\\file.txt")));
+        String html = generator.generateEntryPage(null, "My Title", LocalDateTime.now(),"<h1>Hello world</h1>", List.of("CAT1", "CAT2"), List.of("PERSON1", "PERSON2", "PERSON3"), List.of(new Attachment("C:\\temp\\file.txt","ATACHMENT1","temp\\file.txt")));
         System.out.println(html);
     }
 
@@ -93,8 +93,28 @@ public class HtmlGenerator {
         context.setVariable("filteredYears", allYears);
     }
 
-    public String generateEntryPage(String title, LocalDateTime created, String htmlBody, List<String> categories, List<String> persons, List<Attachment> attachments) {
+    public String generateEntryPage(Metadata metadata, String title, LocalDateTime created, String htmlBody, List<String> categories, List<String> persons, List<Attachment> attachments) {
+        // Create a single entry for navigation
+        Entry currentEntry = new Entry(
+            "current", // id
+            title,
+            created,
+            "", // html
+            persons,
+            categories,
+            attachments,
+            null // location
+        );
+        
+        // Create a list with just this entry for navigation
+        List<Entry> singleEntryList = List.of(currentEntry);
+        
         Context context = new Context();
+        
+        // Setup common context variables for navigation
+        setupCommonContext(context, metadata, singleEntryList, "entry", title, title);
+        
+        // Set specific variables for the entry page
         context.setVariable("title", title);
         context.setVariable("body", htmlBody);
         context.setVariable("categories", categories);

@@ -73,7 +73,7 @@ public class Extractor {
             List<String> persons = entryMetadata.personIds().stream().map(personId -> metadata.people().get(personId).getFullName()).toList();
 
             String htmlBody = getHtmlBody(entryMetadata);
-            String html = htmlGenerator.generateEntryPage(entryMetadata.title(), dateCreated, htmlBody, categories, persons, attachments);
+            String html = htmlGenerator.generateEntryPage(metadata, entryMetadata.title(), dateCreated, htmlBody, categories, persons, attachments);
 
             sb.append(html);
 
