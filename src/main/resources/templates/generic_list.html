@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/head :: head(pageTitle=${pageTitle})}">
     <meta charset="UTF-8">
-    <title>Categories List</title>
+    <title>List</title>
 </head>
 <body>
 <!-- Outer container to center and limit width -->
@@ -11,7 +11,7 @@
     <div th:replace="~{fragments/navigation :: navigation-panel(pageType=${pageType}, currentItem=${currentItem}, persons=${persons}, categories=${categories}, years=${years}, filteredPersons=${filteredPersons}, filteredCategories=${filteredCategories}, filteredYears=${filteredYears})}"></div>
 
     <!-- Include List Template Fragment -->
-    <div th:replace="~{fragments/list :: list-template(title='All Categories', items=${categories}, itemType='category', counts=${categoryCounts})}"></div>
+    <div th:replace="~{fragments/list :: list-template(title=${listTitle}, items=${items}, itemType=${itemType}, counts=${counts})}"></div>
 </div>
 </body>
 </html>

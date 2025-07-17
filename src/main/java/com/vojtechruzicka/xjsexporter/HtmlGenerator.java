@@ -176,87 +176,110 @@ public class HtmlGenerator {
         return templateEngine.process("journal_entries_display", context);
     }
     
-    public String generatePersonsListPage(Metadata metadata, List<Entry> allEntries) {
-        List<String> persons = metadata.people().values().stream()
-                .map(PersonMetadata::getFullName)
-                .distinct()
-                .sorted(czechCollator::compare)
-                .toList();
-        
-        // Count entries for each person
-        Map<String, Integer> personCounts = new HashMap<>();
-        for (String person : persons) {
-            int count = (int) allEntries.stream()
-                    .filter(e -> e.persons().contains(person))
-                    .count();
-            personCounts.put(person, count);
-        }
-        
+    /**
+     * Generic method to generate any type of list page (persons, categories, years)
+     * @param listType The type of list to generate ("persons", "categories", or "years")
+     * @param metadata The metadata object
+     * @param allEntries The list of all entries
+     * @return The generated HTML
+     */
+    public String generateListPage(String listType, Metadata metadata, List<Entry> allEntries) {
         Context context = new Context();
         
+        // Variables to be set based on list type
+        List<String> items;
+        Map<String, Integer> counts = new HashMap<>();
+        String pageType = listType + "_list";
+        String pageTitle = capitalizeFirstLetter(listType) + " List";
+        String listTitle = "All " + capitalizeFirstLetter(listType);
+        String itemType;
+        if (listType.endsWith("ies")) {
+            itemType = listType.substring(0, listType.length() - 3) + "y";
+        } else if (listType.endsWith("s")) {
+            itemType = listType.substring(0, listType.length() - 1);
+        } else {
+            itemType = listType;
+        }
+
+        // Get items and count entries based on list type
+        if (listType.equals("persons")) {
+            items = metadata.people().values().stream()
+                    .map(PersonMetadata::getFullName)
+                    .distinct()
+                    .sorted(czechCollator::compare)
+                    .toList();
+            
+            // Count entries for each person
+            for (String person : items) {
+                int count = (int) allEntries.stream()
+                        .filter(e -> e.persons().contains(person))
+                        .count();
+                counts.put(person, count);
+            }
+        } else if (listType.equals("categories")) {
+            items = metadata.categories().values().stream()
+                    .map(CategoryMetadata::title)
+                    .distinct()
+                    .sorted(czechCollator::compare)
+                    .toList();
+            
+            // Count entries for each category
+            for (String category : items) {
+                int count = (int) allEntries.stream()
+                        .filter(e -> e.categories().contains(category))
+                        .count();
+                counts.put(category, count);
+            }
+        } else if (listType.equals("years")) {
+            items = allEntries.stream()
+                    .map(e -> String.valueOf(e.created().getYear()))
+                    .distinct()
+                    .sorted()
+                    .toList();
+            
+            // Count entries for each year
+            for (String year : items) {
+                int count = (int) allEntries.stream()
+                        .filter(e -> String.valueOf(e.created().getYear()).equals(year))
+                        .count();
+                counts.put(year, count);
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid list type: " + listType);
+        }
+        
         // Setup common context variables
-        setupCommonContext(context, metadata, allEntries, "persons_list", null, "Persons List");
+        setupCommonContext(context, metadata, allEntries, pageType, null, pageTitle);
         
-        // Add specific variables for this template
-        context.setVariable("persons", persons);
-        context.setVariable("personCounts", personCounts);
+        // Add specific variables for the generic template
+        context.setVariable("items", items);
+        context.setVariable("counts", counts);
+        context.setVariable("itemType", itemType);
+        context.setVariable("listTitle", listTitle);
         
-        return templateEngine.process("persons_list", context);
+        return templateEngine.process("generic_list", context);
+    }
+    
+    /**
+     * Helper method to capitalize the first letter of a string
+     */
+    private String capitalizeFirstLetter(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+        return input.substring(0, 1).toUpperCase() + input.substring(1);
+    }
+    
+    // Maintain backward compatibility with existing code
+    public String generatePersonsListPage(Metadata metadata, List<Entry> allEntries) {
+        return generateListPage("persons", metadata, allEntries);
     }
     
     public String generateCategoriesListPage(Metadata metadata, List<Entry> allEntries) {
-        List<String> categories = metadata.categories().values().stream()
-                .map(CategoryMetadata::title)
-                .distinct()
-                .sorted(czechCollator::compare)
-                .toList();
-        
-        // Count entries for each category
-        Map<String, Integer> categoryCounts = new HashMap<>();
-        for (String category : categories) {
-            int count = (int) allEntries.stream()
-                    .filter(e -> e.categories().contains(category))
-                    .count();
-            categoryCounts.put(category, count);
-        }
-        
-        Context context = new Context();
-        
-        // Setup common context variables
-        setupCommonContext(context, metadata, allEntries, "categories_list", null, "Categories List");
-        
-        // Add specific variables for this template
-        context.setVariable("categories", categories);
-        context.setVariable("categoryCounts", categoryCounts);
-        
-        return templateEngine.process("categories_list", context);
+        return generateListPage("categories", metadata, allEntries);
     }
     
     public String generateYearsListPage(List<Entry> allEntries, Metadata metadata) {
-        List<String> years = allEntries.stream()
-                .map(e -> String.valueOf(e.created().getYear()))
-                .distinct()
-                .sorted()
-                .toList();
-        
-        // Count entries for each year
-        Map<String, Integer> yearCounts = new HashMap<>();
-        for (String year : years) {
-            int count = (int) allEntries.stream()
-                    .filter(e -> String.valueOf(e.created().getYear()).equals(year))
-                    .count();
-            yearCounts.put(year, count);
-        }
-        
-        Context context = new Context();
-        
-        // Setup common context variables
-        setupCommonContext(context, metadata, allEntries, "years_list", null, "Years List");
-        
-        // Add specific variables for this template
-        context.setVariable("years", years);
-        context.setVariable("yearCounts", yearCounts);
-        
-        return templateEngine.process("years_list", context);
+        return generateListPage("years", metadata, allEntries);
     }
 }
