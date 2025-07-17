@@ -1,5 +1,10 @@
 package com.vojtechruzicka.xjsexporter;
 
+import com.vojtechruzicka.xjsexporter.config.ExporterConfiguration;
+import com.vojtechruzicka.xjsexporter.model.Attachment;
+import com.vojtechruzicka.xjsexporter.model.Entry;
+import com.vojtechruzicka.xjsexporter.model.EntryMetadata;
+import com.vojtechruzicka.xjsexporter.model.Metadata;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.terminal.Terminal;

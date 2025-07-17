@@ -1,4 +1,4 @@
-package com.vojtechruzicka.xjsexporter;
+package com.vojtechruzicka.xjsexporter.model;
 
 import io.micrometer.common.util.StringUtils;
 

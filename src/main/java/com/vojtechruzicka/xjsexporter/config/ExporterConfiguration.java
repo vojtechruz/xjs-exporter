@@ -1,4 +1,4 @@
-package com.vojtechruzicka.xjsexporter;
+package com.vojtechruzicka.xjsexporter.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;

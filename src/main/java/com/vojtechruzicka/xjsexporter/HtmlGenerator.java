@@ -1,5 +1,9 @@
 package com.vojtechruzicka.xjsexporter;
 
+import com.vojtechruzicka.xjsexporter.config.ExporterConfiguration;
+import com.vojtechruzicka.xjsexporter.model.Attachment;
+import com.vojtechruzicka.xjsexporter.model.Entry;
+import com.vojtechruzicka.xjsexporter.model.Metadata;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;

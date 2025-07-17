@@ -1,5 +1,8 @@
 package com.vojtechruzicka.xjsexporter;
 
+import com.vojtechruzicka.xjsexporter.model.EntryMetadata;
+import com.vojtechruzicka.xjsexporter.model.Metadata;
+import com.vojtechruzicka.xjsexporter.model.PersonMetadata;
 import io.micrometer.common.util.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

@@ -1,4 +1,7 @@
-package com.vojtechruzicka.xjsexporter;
+package com.vojtechruzicka.xjsexporter.model;
+
+import com.vojtechruzicka.xjsexporter.AttachmentMetadata;
+import com.vojtechruzicka.xjsexporter.CategoryMetadata;
 
 import java.util.Map;
 

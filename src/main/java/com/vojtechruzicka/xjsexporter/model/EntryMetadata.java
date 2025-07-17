@@ -1,4 +1,4 @@
-package com.vojtechruzicka.xjsexporter;
+package com.vojtechruzicka.xjsexporter.model;
 
 import java.time.LocalDateTime;
 import java.util.List;
