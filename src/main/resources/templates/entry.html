@@ -19,13 +19,17 @@
         </div>
         <div class="categories" th:if="${categories.size() > 0}">
             <span class="metadata-title">Categories:</span>
-            <span class="category" th:each="category : ${categories}" th:text="${category}">
-            </span>
+            <a class="category" th:each="category : ${categories}" 
+               th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}" 
+               th:text="${category}">
+            </a>
         </div>
         <div class="persons" th:if="${persons.size() > 0}">
             <span class="metadata-title">Persons:</span>
-            <span class="person" th:each="person : ${persons}" th:text="${person}">
-            </span>
+            <a class="person" th:each="person : ${persons}" 
+               th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}" 
+               th:text="${person}">
+            </a>
         </div>
         <hr>
 
