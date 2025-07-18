@@ -42,13 +42,24 @@ public class HtmlGenerator {
     private String getCssContent() {
         try (var resource = getClass().getResourceAsStream("/static/css/styles.css")) {
             if (resource != null) {
-
                 return new String(resource.readAllBytes());
             } else {
                 return "/* CSS file not found */";
             }
         } catch (IOException e) {
             return "/* CSS file not found: " + e.getMessage() + " */";
+        }
+    }
+    
+    private String getJavaScriptContent() {
+        try (var resource = getClass().getResourceAsStream("/static/js/navigation.js")) {
+            if (resource != null) {
+                return new String(resource.readAllBytes());
+            } else {
+                return "/* JavaScript file not found */";
+            }
+        } catch (IOException e) {
+            return "/* JavaScript file not found: " + e.getMessage() + " */";
         }
     }
 
@@ -105,6 +116,9 @@ public class HtmlGenerator {
         
         // Add CSS content
         context.setVariable("cssContent", getCssContent());
+        
+        // Add JavaScript content
+        context.setVariable("jsContent", getJavaScriptContent());
         
         // Add navigation variables
         context.setVariable("persons", allPersons);

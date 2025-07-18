@@ -105,6 +105,59 @@ body {
     font-weight: 500;
 }
 
+/* Collapsible sections in navigation */
+.collapsible-header {
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.collapsible-header .toggle-icon {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    transition: transform var(--transition-speed) ease;
+}
+
+.collapsible-header .toggle-icon:before {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    width: 10px;
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.7);
+    transform: translateY(-50%);
+}
+
+.collapsible-header .toggle-icon:after {
+    content: '';
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    width: 2px;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.7);
+    transform: translateY(-50%);
+    transition: opacity var(--transition-speed) ease;
+}
+
+.collapsible-section.collapsed .toggle-icon:after {
+    opacity: 0;
+}
+
+.collapsible-section.collapsed .collapsible-content {
+    display: none;
+}
+
+.collapsible-header:hover .toggle-icon:before,
+.collapsible-header:hover .toggle-icon:after {
+    background-color: white;
+}
+
 /* Links */
 a {
     text-decoration: none;

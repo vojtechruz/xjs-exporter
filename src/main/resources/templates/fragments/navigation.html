@@ -35,9 +35,9 @@
         </div>
 
         <!-- Persons - only show if not on a person page or show filtered list -->
-        <div th:if="${pageType != 'person'}">
-            <h3>Persons <span class="badge" th:text="${(filteredPersons != null ? filteredPersons : persons).size()}"></span></h3>
-            <ul>
+        <div th:if="${pageType != 'person'}" class="collapsible-section" data-section-id="persons">
+            <h3 class="collapsible-header">Persons <span class="badge" th:text="${(filteredPersons != null ? filteredPersons : persons).size()}"></span><span class="toggle-icon"></span></h3>
+            <ul class="collapsible-content">
                 <li th:each="person : ${filteredPersons != null ? filteredPersons : persons}">
                     <a th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}">
                         <span th:text="${person}"></span>
@@ -51,9 +51,9 @@
         </div>
 
         <!-- Categories - only show if not on a category page or show filtered list -->
-        <div th:if="${pageType != 'category'}">
-            <h3>Categories <span class="badge" th:text="${(filteredCategories != null ? filteredCategories : categories).size()}"></span></h3>
-            <ul>
+        <div th:if="${pageType != 'category'}" class="collapsible-section" data-section-id="categories">
+            <h3 class="collapsible-header">Categories <span class="badge" th:text="${(filteredCategories != null ? filteredCategories : categories).size()}"></span><span class="toggle-icon"></span></h3>
+            <ul class="collapsible-content">
                 <li th:each="category : ${filteredCategories != null ? filteredCategories : categories}">
                     <a th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}">
                         <span th:text="${category}"></span>
@@ -67,9 +67,9 @@
         </div>
 
         <!-- Years - only show if not on a year page or show filtered list -->
-        <div th:if="${pageType != 'year'}">
-            <h3>Years <span class="badge" th:text="${(filteredYears != null ? filteredYears : years).size()}"></span></h3>
-            <ul>
+        <div th:if="${pageType != 'year'}" class="collapsible-section" data-section-id="years">
+            <h3 class="collapsible-header">Years <span class="badge" th:text="${(filteredYears != null ? filteredYears : years).size()}"></span><span class="toggle-icon"></span></h3>
+            <ul class="collapsible-content">
                 <li th:each="year : ${filteredYears != null ? filteredYears : years}">
                     <a th:href="${#strings.concat(year, '.html')}">
                         <span th:text="${year}"></span>
