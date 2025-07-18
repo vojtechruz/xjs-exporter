@@ -11,6 +11,7 @@
     --border-color: #e0e0e0;
     --shadow-color: rgba(0, 0, 0, 0.1);
     --transition-speed: 0.3s;
+    --badge-border-radius: 10px;
 }
 
 /* General body settings */
@@ -273,9 +274,14 @@ a:hover {
     margin-right: 8px;
     background-color: var(--primary-light);
     color: white;
-    padding: 3px 10px;
-    border-radius: 15px;
+    padding: 2px 6px;
+    border-radius: var(--badge-border-radius);
     font-size: 0.8rem;
+
+    &:hover {
+        color: white;
+        background-color: var(--primary-dark);
+    }
 }
 
 hr {
