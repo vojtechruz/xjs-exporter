@@ -229,51 +229,72 @@ public class HtmlGenerator {
             itemType = listType;
         }
 
-        // Get items and count entries based on list type
+        // Get items based on list type
         if (listType.equals("persons")) {
             items = metadata.people().values().stream()
                     .map(PersonMetadata::getFullName)
                     .distinct()
                     .sorted(czechCollator::compare)
                     .toList();
-            
-            // Count entries for each person
-            for (String person : items) {
-                int count = (int) allEntries.stream()
-                        .filter(e -> e.persons().contains(person))
-                        .count();
-                counts.put(person, count);
-            }
         } else if (listType.equals("categories")) {
             items = metadata.categories().values().stream()
                     .map(CategoryMetadata::title)
                     .distinct()
                     .sorted(czechCollator::compare)
                     .toList();
-            
-            // Count entries for each category
-            for (String category : items) {
-                int count = (int) allEntries.stream()
-                        .filter(e -> e.categories().contains(category))
-                        .count();
-                counts.put(category, count);
-            }
         } else if (listType.equals("years")) {
             items = allEntries.stream()
                     .map(e -> String.valueOf(e.created().getYear()))
                     .distinct()
                     .sorted()
                     .toList();
-            
-            // Count entries for each year
-            for (String year : items) {
-                int count = (int) allEntries.stream()
-                        .filter(e -> String.valueOf(e.created().getYear()).equals(year))
-                        .count();
-                counts.put(year, count);
-            }
         } else {
             throw new IllegalArgumentException("Invalid list type: " + listType);
+        }
+        
+        // Calculate counts for all entity types, not just the current list type
+        
+        // Get all persons, categories, and years
+        List<String> allPersons = metadata.people().values().stream()
+                .map(PersonMetadata::getFullName)
+                .distinct()
+                .sorted(czechCollator::compare)
+                .toList();
+                
+        List<String> allCategories = metadata.categories().values().stream()
+                .map(CategoryMetadata::title)
+                .distinct()
+                .sorted(czechCollator::compare)
+                .toList();
+                
+        List<String> allYears = allEntries.stream()
+                .map(e -> String.valueOf(e.created().getYear()))
+                .distinct()
+                .sorted()
+                .toList();
+        
+        // Count entries for each person
+        for (String person : allPersons) {
+            int count = (int) allEntries.stream()
+                    .filter(e -> e.persons().contains(person))
+                    .count();
+            counts.put(person, count);
+        }
+        
+        // Count entries for each category
+        for (String category : allCategories) {
+            int count = (int) allEntries.stream()
+                    .filter(e -> e.categories().contains(category))
+                    .count();
+            counts.put(category, count);
+        }
+        
+        // Count entries for each year
+        for (String year : allYears) {
+            int count = (int) allEntries.stream()
+                    .filter(e -> String.valueOf(e.created().getYear()).equals(year))
+                    .count();
+            counts.put(year, count);
         }
         
         // Setup common context variables

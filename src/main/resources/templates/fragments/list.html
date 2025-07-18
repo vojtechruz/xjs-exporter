@@ -20,7 +20,7 @@
                     <a th:if="${itemType == 'category'}" 
                        th:href="${#strings.concat('category_', #strings.replace(item, ' ', '_'), '.html')}" 
                        th:text="${item}"></a>
-                    <span class="count" th:text="${'(' + counts.get(item) + ')'}"></span>
+                    <span class="badge" th:text="${counts.get(item)}"></span>
                 </li>
             </ul>
         </div>

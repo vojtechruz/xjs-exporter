@@ -8,7 +8,7 @@
 <!-- Outer container to center and limit width -->
 <div class="container">
     <!-- Include Navigation Panel Fragment -->
-    <div th:replace="~{fragments/navigation :: navigation-panel(pageType=${pageType}, currentItem=${currentItem}, persons=${persons}, categories=${categories}, years=${years}, filteredPersons=${filteredPersons}, filteredCategories=${filteredCategories}, filteredYears=${filteredYears})}"></div>
+    <div th:replace="~{fragments/navigation :: navigation-panel(pageType=${pageType}, currentItem=${currentItem}, persons=${persons}, categories=${categories}, years=${years}, filteredPersons=${filteredPersons}, filteredCategories=${filteredCategories}, filteredYears=${filteredYears}, counts=${counts})}"></div>
 
     <!-- Include List Template Fragment -->
     <div th:replace="~{fragments/list :: list-template(title=${listTitle}, items=${items}, itemType=${itemType}, counts=${counts})}"></div>
