@@ -9,6 +9,7 @@ import com.vojtechruzicka.xjsexporter.model.Entry;
 import com.vojtechruzicka.xjsexporter.model.EntryMetadata;
 import com.vojtechruzicka.xjsexporter.model.Metadata;
 import com.vojtechruzicka.xjsexporter.model.PersonMetadata;
+import com.vojtechruzicka.xjsexporter.service.FileService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -43,12 +44,14 @@ public class JsonIntermediateStorage {
     private static final String EXTRACTOR_VERSION = "1.0.0";
 
     private final ObjectMapper objectMapper;
+    private final FileService fileService;
 
-    public JsonIntermediateStorage() {
+    public JsonIntermediateStorage(FileService fileService) {
         this.objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        this.fileService = fileService;
     }
 
     /**
@@ -309,11 +312,7 @@ public class JsonIntermediateStorage {
                     for (String attachmentId : entryJson.attachmentIds()) {
                         AttachmentMetadata attachmentMetadata = attachmentMap.get(attachmentId);
                         if (attachmentMetadata != null) {
-                            entryAttachments.add(new com.vojtechruzicka.xjsexporter.model.Attachment(
-                                    attachmentMetadata.absoluteSourcePath(),
-                                    attachmentMetadata.name(),
-                                    attachmentMetadata.relativeLocation()
-                            ));
+                            entryAttachments.add(fileService.getAttachmentFromMetadata(attachmentMetadata));
                         } else {
                             log.warn("Unknown attachment ID '{}' in entry: {}", attachmentId, entryJson.id());
                         }

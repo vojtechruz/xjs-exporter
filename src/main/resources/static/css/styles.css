@@ -347,3 +347,173 @@ hr {
         border-radius: 12px 12px 0 0;
     }
 }
+
+
+
+/* Attachments Section Styles */
+.attachments-section {
+    margin-top: 2rem;
+}
+
+.attachments-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.attachments-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.attachment-count {
+    background: #e9ecef;
+    color: #6c757d;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.attachments-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.attachment-item:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.attachment-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    background: #6c757d;
+    border-radius: 0.5rem;
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* File type specific colors */
+.attachment-icon.icon-pdf { background: #dc3545; }
+.attachment-icon.icon-doc, .attachment-icon.icon-docx { background: #0d6efd; }
+.attachment-icon.icon-xls, .attachment-icon.icon-xlsx { background: #198754; }
+.attachment-icon.icon-ppt, .attachment-icon.icon-pptx { background: #fd7e14; }
+.attachment-icon.icon-jpg, .attachment-icon.icon-jpeg,
+.attachment-icon.icon-png, .attachment-icon.icon-gif { background: #6f42c1; }
+.attachment-icon.icon-mp4, .attachment-icon.icon-avi,
+.attachment-icon.icon-mov { background: #20c997; }
+.attachment-icon.icon-mp3, .attachment-icon.icon-wav { background: #ffc107; }
+.attachment-icon.icon-zip, .attachment-icon.icon-rar { background: #6c757d; }
+.attachment-icon.icon-txt { background: #495057; }
+
+.file-type-badge {
+    color: white;
+    font-weight: bold;
+    font-size: 0.625rem;
+    letter-spacing: 0.5px;
+}
+
+.attachment-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.attachment-name {
+    display: block;
+    color: #0d6efd;
+    text-decoration: none;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    word-break: break-word;
+}
+
+.attachment-name:hover {
+    text-decoration: underline;
+}
+
+.attachment-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.file-size::before {
+    content: "📏 ";
+}
+
+.file-type::before {
+    content: "🏷️ ";
+}
+
+.attachment-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.btn-download, .btn-external {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    background: white;
+    color: #6c757d;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.btn-download:hover {
+    background: #198754;
+    color: white;
+    border-color: #198754;
+}
+
+.btn-external:hover {
+    background: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .attachment-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .attachment-meta {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .attachment-actions {
+        align-self: stretch;
+        justify-content: center;
+    }
+}

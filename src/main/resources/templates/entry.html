@@ -37,13 +37,55 @@
             <span th:if="${#strings.isEmpty(body)}">[Empty body]</span>
             <span th:unless="${#strings.isEmpty(body)}" th:utext="${body}"></span>
         </div>
-        <div class="attachments" th:if="${attachments.size() > 0}">
+
+        <!-- Enhanced Attachments Section -->
+        <div class="attachments-section" th:if="${attachments.size() > 0}">
             <hr>
-            <div class="metadata-title">Attachments:</div>
-            <span class="attachment" th:each="attachment : ${attachments}">
-                <a th:href="${attachment.absoluteSourcePath}" th:text="${attachment.name}"></a>
-            </span>
+            <div class="attachments-header">
+                <h3>📎 Attachments</h3>
+                <span class="attachment-count" th:text="${attachments.size()} + ' file' + (${attachments.size()} > 1 ? 's' : '')">1 file</span>
+            </div>
+
+            <div class="attachments-grid">
+                <div class="attachment-item" th:each="attachment : ${attachments}">
+                    <div class="attachment-icon"
+                         th:classappend="${attachment.extension != null ? 'icon-' + attachment.extension.toLowerCase() : 'icon-file'}">
+                        <span th:text="${attachment.extension != null ? attachment.extension.toUpperCase() : 'FILE'}"
+                              class="file-type-badge">PDF</span>
+                    </div>
+
+                    <div class="attachment-info">
+                        <a class="attachment-name"
+                           th:href="${attachment.absoluteSourcePath}"
+                           th:text="${attachment.name}"
+                           target="_blank"
+                           rel="noopener noreferrer">filename.pdf</a>
+
+                        <div class="attachment-meta">
+                            <span class="file-size" th:if="${attachment.size != null}" th:text="${attachment.formattedSize}">1.2 MB</span>
+                            <span class="file-type" th:if="${attachment.mimeType != null}" th:text="${attachment.mimeType}">application/pdf</span>
+                        </div>
+                    </div>
+
+                    <div class="attachment-actions">
+                        <a class="btn-download"
+                           th:href="${attachment.absoluteSourcePath}"
+                           download
+                           title="Download file">
+                            📥
+                        </a>
+                        <a class="btn-external"
+                           th:href="${attachment.absoluteSourcePath}"
+                           target="_blank"
+                           title="Open in new tab">
+                            🔗
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
+
+
     </div>
 </div>
 </body>

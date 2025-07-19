@@ -39,7 +39,7 @@ public class HtmlGenerator {
         fileService.init();
         HtmlGenerator generator = new HtmlGenerator(templateEngine, fileService);
 
-        String html = generator.generateEntryPage(null, "My Title", LocalDateTime.now(),"<h1>Hello world</h1>", List.of("CAT1", "CAT2"), List.of("PERSON1", "PERSON2", "PERSON3"), List.of(new Attachment("C:\\temp\\file.txt","ATACHMENT1","temp\\file.txt")));
+        String html = generator.generateEntryPage(null, "My Title", LocalDateTime.now(),"<h1>Hello world</h1>", List.of("CAT1", "CAT2"), List.of("PERSON1", "PERSON2", "PERSON3"), List.of(new Attachment("C:\\temp\\file.txt","ATACHMENT1","temp\\file.txt", "TXT", "application/text", 1, "1 MB")));
         System.out.println(html);
     }
 

@@ -131,7 +131,7 @@ public class Extractor {
         // Create components
         MetadataExtractor metadataExtractor = new MetadataExtractor();
         HtmlGenerator htmlGenerator = new HtmlGenerator(new ExporterConfiguration().defaultTemplatingEngine(), fileService);
-        JsonIntermediateStorage jsonStorage = new JsonIntermediateStorage();
+        JsonIntermediateStorage jsonStorage = new JsonIntermediateStorage(fileService);
         
         // Define paths
         String sourcePath = "C:\\Users\\vojte\\Dropbox\\_Archiv\\Denik\\XJS\\Deník\\";
