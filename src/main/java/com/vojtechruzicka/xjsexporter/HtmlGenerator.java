@@ -169,6 +169,10 @@ public class HtmlGenerator {
         context.setVariable("dateCreated", created.toLocalDate());
         context.setVariable("basePath", BASE_PATH_SUBDIRECTORY);
 
+        boolean hasImages = attachments.stream().anyMatch(attachment -> attachment.mimeType().startsWith("image/"));
+        context.setVariable("hasImageAttachments", hasImages);
+
+
         return templateEngine.process("entry", context);
     }
 
