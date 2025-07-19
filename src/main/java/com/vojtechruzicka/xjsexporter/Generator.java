@@ -1,9 +1,11 @@
 package com.vojtechruzicka.xjsexporter;
 
+import com.github.slugify.Slugify;
 import com.vojtechruzicka.xjsexporter.model.Entry;
 import com.vojtechruzicka.xjsexporter.model.Metadata;
 import com.vojtechruzicka.xjsexporter.model.json.JsonIntermediateStorage;
 import com.vojtechruzicka.xjsexporter.model.json.JsonIntermediateStorage.MetadataAndEntries;
+import com.vojtechruzicka.xjsexporter.service.FileService;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.terminal.Terminal;
 import org.springframework.shell.standard.ShellComponent;
@@ -32,11 +34,13 @@ public class Generator {
     private final HtmlGenerator htmlGenerator;
     private final JsonIntermediateStorage jsonStorage;
     private final Terminal terminal;
+    private final FileService fileService;
 
-    public Generator(HtmlGenerator htmlGenerator, JsonIntermediateStorage jsonStorage, Terminal terminal) {
+    public Generator(HtmlGenerator htmlGenerator, JsonIntermediateStorage jsonStorage, Terminal terminal, FileService fileService) {
         this.htmlGenerator = htmlGenerator;
         this.jsonStorage = jsonStorage;
         this.terminal = terminal;
+        this.fileService = fileService;
     }
 
     @ShellMethod(value = "Generates HTML output from intermediate JSON files", key = "generate")
@@ -66,9 +70,14 @@ public class Generator {
                 .sorted(Comparator.comparing(Entry::created).reversed())
                 .collect(Collectors.toList());
 
-        // Create target directory if it doesn't exist
+        // Create target directory and subdirectories if they don't exist
         try {
             Files.createDirectories(Path.of(finalTargetPath));
+            Files.createDirectories(Path.of(finalTargetPath + "persons"));
+            Files.createDirectories(Path.of(finalTargetPath + "categories"));
+            Files.createDirectories(Path.of(finalTargetPath + "entries"));
+            Files.createDirectories(Path.of(finalTargetPath + "years"));
+            Files.createDirectories(Path.of(finalTargetPath + "lists"));
         } catch (IOException e) {
             terminal.writer().println("Could not create target directory: " + finalTargetPath + ", Error: " + e);
             return "Failed to create target directory: " + e.getMessage();
@@ -95,7 +104,7 @@ public class Generator {
                 );
                 
                 Files.write(
-                    Path.of(finalTargetPath + entry.created().toLocalDate().toString() + "_" + entry.id() + ".html"), 
+                    Path.of(finalTargetPath + "entries" + File.separator + fileService.getEntryFileName(entry) + ".html"),
                     html.getBytes(), 
                     StandardOpenOption.CREATE, 
                     StandardOpenOption.WRITE, 
@@ -109,7 +118,7 @@ public class Generator {
         // Copy attachment files
         metadata.attachments().values().forEach(attachmentMetadata -> {
             try {
-                Path target = Path.of(finalTargetPath + "Attachments" + File.separator + attachmentMetadata.name());
+                Path target = Path.of(finalTargetPath + "attachments" + File.separator + attachmentMetadata.name());
                 Files.createDirectories(target.getParent());
                 Files.copy(Path.of(attachmentMetadata.absoluteSourcePath()), target, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
@@ -131,7 +140,7 @@ public class Generator {
         entriesByYear.forEach((year, yearEntries) -> {
             String yearPage = htmlGenerator.generateMainPage(metadata, yearEntries, "year", String.valueOf(year));
             try {
-                Files.write(Path.of(finalTargetPath + year + ".html"), yearPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+                Files.write(Path.of(finalTargetPath + "years" + File.separator + year + ".html"), yearPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
             } catch (IOException e) {
                 terminal.writer().println("Could not write year file: " + year + ", Error: " + e);
             }
@@ -153,7 +162,7 @@ public class Generator {
                 String personPage = htmlGenerator.generateMainPage(finalMetadata, personEntries, "person", person);
                 try {
                     String fileName = "person_" + person.replace(' ', '_') + ".html";
-                    Files.write(Path.of(finalTargetPath + fileName), personPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+                    Files.write(Path.of(finalTargetPath + "persons" + File.separator + fileName), personPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
                 } catch (IOException e) {
                     terminal.writer().println("Could not write person file: " + person + ", Error: " + e);
                 }
@@ -176,7 +185,7 @@ public class Generator {
                 String categoryPage = htmlGenerator.generateMainPage(finalMetadata, categoryEntries, "category", category);
                 try {
                     String fileName = "category_" + category.replace(' ', '_') + ".html";
-                    Files.write(Path.of(finalTargetPath + fileName), categoryPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+                    Files.write(Path.of(finalTargetPath + "categories" + File.separator + fileName), categoryPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
                 } catch (IOException e) {
                     terminal.writer().println("Could not write category file: " + category + ", Error: " + e);
                 }
@@ -185,17 +194,18 @@ public class Generator {
         
         // Generate list pages
         try {
+            String listsDir = "lists" + File.separator;
             // Persons list page
             String personsListPage = htmlGenerator.generatePersonsListPage(finalMetadata, finalEntries);
-            Files.write(Path.of(finalTargetPath + "persons_list.html"), personsListPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(Path.of(finalTargetPath + listsDir + "persons_list.html"), personsListPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
             
             // Categories list page
             String categoriesListPage = htmlGenerator.generateCategoriesListPage(finalMetadata, finalEntries);
-            Files.write(Path.of(finalTargetPath + "categories_list.html"), categoriesListPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(Path.of(finalTargetPath + listsDir + "categories_list.html"), categoriesListPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
             
             // Years list page
             String yearsListPage = htmlGenerator.generateYearsListPage(finalEntries, finalMetadata);
-            Files.write(Path.of(finalTargetPath + "years_list.html"), yearsListPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.write(Path.of(finalTargetPath + listsDir + "years_list.html"), yearsListPage.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
             terminal.writer().println("Could not write list pages, Error: " + e);
         }

@@ -5,6 +5,7 @@ import com.vojtechruzicka.xjsexporter.model.Attachment;
 import com.vojtechruzicka.xjsexporter.model.Entry;
 import com.vojtechruzicka.xjsexporter.model.Metadata;
 import com.vojtechruzicka.xjsexporter.model.PersonMetadata;
+import com.vojtechruzicka.xjsexporter.service.FileService;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -20,20 +21,23 @@ import java.util.Map;
 @Service
 public class HtmlGenerator {
 
+    public static final String BASE_PATH_SUBDIRECTORY = "../";
     private final TemplateEngine templateEngine;
-
     private final Collator czechCollator = Collator.getInstance(Locale.of("cs", "CZ"));
+    private final FileService fileService;
 
-    public HtmlGenerator(TemplateEngine templateEngine) {
+    public HtmlGenerator(TemplateEngine templateEngine, FileService fileService) {
         this.templateEngine = templateEngine;
         czechCollator.setStrength(Collator.PRIMARY);
+        this.fileService = fileService;
     }
 
     public static void main(String[] args) {
 
         TemplateEngine templateEngine = new ExporterConfiguration().defaultTemplatingEngine();
-
-        HtmlGenerator generator = new HtmlGenerator(templateEngine);
+        FileService fileService = new FileService();
+        fileService.init();
+        HtmlGenerator generator = new HtmlGenerator(templateEngine, fileService);
 
         String html = generator.generateEntryPage(null, "My Title", LocalDateTime.now(),"<h1>Hello world</h1>", List.of("CAT1", "CAT2"), List.of("PERSON1", "PERSON2", "PERSON3"), List.of(new Attachment("C:\\temp\\file.txt","ATACHMENT1","temp\\file.txt")));
         System.out.println(html);
@@ -163,6 +167,7 @@ public class HtmlGenerator {
         context.setVariable("persons", persons);
         context.setVariable("attachments", attachments);
         context.setVariable("dateCreated", created.toLocalDate());
+        context.setVariable("basePath", BASE_PATH_SUBDIRECTORY);
 
         return templateEngine.process("entry", context);
     }
@@ -206,14 +211,22 @@ public class HtmlGenerator {
         
         // Setup common context variables
         setupCommonContext(context, metadata, entries, pageType, currentItem, pageTitle);
-        
+
+        List<Entry> entriesWithFileName = entries.stream().map(e -> new Entry(e, fileService.getEntryFileName(e))).toList();
+
         // Add journal entries
-        context.setVariable("journalEntries", entries);
+        context.setVariable("journalEntries", entriesWithFileName);
         
         // Override filtered lists with actual filtered data
         context.setVariable("filteredPersons", filteredPersons);
         context.setVariable("filteredCategories", filteredCategories);
         context.setVariable("filteredYears", filteredYears);
+
+        if(currentItem != null) {
+            context.setVariable("basePath", BASE_PATH_SUBDIRECTORY);
+        } else {
+            context.setVariable("basePath", "");
+        }
 
         return templateEngine.process("journal_entries_display", context);
     }
@@ -244,27 +257,24 @@ public class HtmlGenerator {
         }
 
         // Get items based on list type
-        if (listType.equals("persons")) {
-            items = metadata.people().values().stream()
+        items = switch (listType) {
+            case "persons" -> metadata.people().values().stream()
                     .map(PersonMetadata::getFullName)
                     .distinct()
                     .sorted(czechCollator::compare)
                     .toList();
-        } else if (listType.equals("categories")) {
-            items = metadata.categories().values().stream()
+            case "categories" -> metadata.categories().values().stream()
                     .map(CategoryMetadata::title)
                     .distinct()
                     .sorted(czechCollator::compare)
                     .toList();
-        } else if (listType.equals("years")) {
-            items = allEntries.stream()
+            case "years" -> allEntries.stream()
                     .map(e -> String.valueOf(e.created().getYear()))
                     .distinct()
                     .sorted()
                     .toList();
-        } else {
-            throw new IllegalArgumentException("Invalid list type: " + listType);
-        }
+            default -> throw new IllegalArgumentException("Invalid list type: " + listType);
+        };
         
         // Calculate counts for all entity types, not just the current list type
         
@@ -319,6 +329,7 @@ public class HtmlGenerator {
         context.setVariable("counts", counts);
         context.setVariable("itemType", itemType);
         context.setVariable("listTitle", listTitle);
+        context.setVariable("basePath", BASE_PATH_SUBDIRECTORY);
         
         return templateEngine.process("generic_list", context);
     }

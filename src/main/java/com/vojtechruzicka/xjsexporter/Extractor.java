@@ -3,6 +3,7 @@ package com.vojtechruzicka.xjsexporter;
 import com.vojtechruzicka.xjsexporter.config.ExporterConfiguration;
 import com.vojtechruzicka.xjsexporter.model.*;
 import com.vojtechruzicka.xjsexporter.model.json.JsonIntermediateStorage;
+import com.vojtechruzicka.xjsexporter.service.FileService;
 import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.terminal.Terminal;
@@ -12,6 +13,7 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
+import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -114,6 +116,8 @@ public class Extractor {
 
     public static void main(String[] args) throws IOException {
         ByteArrayInputStream inputStream = new ByteArrayInputStream("help".getBytes());
+        FileService fileService = new FileService();
+        fileService.init();
 
         // Capture all output written to the terminal
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -126,7 +130,7 @@ public class Extractor {
 
         // Create components
         MetadataExtractor metadataExtractor = new MetadataExtractor();
-        HtmlGenerator htmlGenerator = new HtmlGenerator(new ExporterConfiguration().defaultTemplatingEngine());
+        HtmlGenerator htmlGenerator = new HtmlGenerator(new ExporterConfiguration().defaultTemplatingEngine(), fileService);
         JsonIntermediateStorage jsonStorage = new JsonIntermediateStorage();
         
         // Define paths
@@ -140,8 +144,30 @@ public class Extractor {
         System.out.println(extractResult);
         
         // Generate HTML from JSON
-        Generator generator = new Generator(htmlGenerator, jsonStorage, terminal);
+        Generator generator = new Generator(htmlGenerator, jsonStorage, terminal, fileService);
         String generateResult = generator.generate(intermediatePath, targetPath);
         System.out.println(generateResult);
+
+
+        try {
+            File htmlFile = new File(targetPath+"index.html");
+
+            // Check if Desktop is supported
+            if (Desktop.isDesktopSupported()) {
+                Desktop desktop = Desktop.getDesktop();
+
+                // Check if browse action is supported
+                if (desktop.isSupported(Desktop.Action.BROWSE)) {
+                    desktop.browse(htmlFile.toURI());
+                } else {
+                    System.err.println("Browse action not supported");
+                }
+            } else {
+                System.err.println("Desktop not supported");
+            }
+        } catch (IOException e) {
+            System.err.println("Error opening file: " + e.getMessage());
+        }
+
     }
 }

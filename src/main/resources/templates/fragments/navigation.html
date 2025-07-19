@@ -5,18 +5,20 @@
 </head>
 <body>
     <!-- Navigation Panel Fragment -->
-    <div th:fragment="navigation-panel(pageType, currentItem, persons, categories, years, filteredPersons, filteredCategories, filteredYears, counts)" class="navigation-panel">
+    <div th:fragment="navigation-panel(pageType, currentItem, persons, categories, years, filteredPersons, filteredCategories, filteredYears, counts, basePath)"
+         th:with="basePath=${basePath != null ? basePath : 'xxx'}"
+         class="navigation-panel">
         <h2>Browse By</h2>
 
         <!-- Links to list pages -->
         <ul class="list-pages">
-            <li><a th:if="${pageType != 'main'}" href="index.html">All Entries</a>
+            <li><a th:if="${pageType != 'main'}" th:href="${#strings.concat(basePath, 'index.html')}">All Entries</a>
                 <strong th:if="${pageType == 'main'}">All Entries</strong></li>
-            <li><a th:if="${pageType != 'persons_list'}" href="persons_list.html">Persons List</a>
+            <li><a th:if="${pageType != 'persons_list'}" th:href="${#strings.concat(basePath, 'lists/persons_list.html')}">Persons List</a>
                 <strong th:if="${pageType == 'persons_list'}">Persons List</strong></li>
-            <li><a th:if="${pageType != 'categories_list'}" href="categories_list.html">Categories List</a>
+            <li><a th:if="${pageType != 'categories_list'}" th:href="${#strings.concat(basePath, 'lists/categories_list.html')}">Categories List</a>
                 <strong th:if="${pageType == 'categories_list'}">Categories List</strong></li>
-            <li><a th:if="${pageType != 'years_list'}" href="years_list.html">Years List</a>
+            <li><a th:if="${pageType != 'years_list'}" th:href="${#strings.concat(basePath, 'lists/years_list.html')}">Years List</a>
                 <strong th:if="${pageType == 'years_list'}">Years List</strong></li>
         </ul>
 
@@ -39,7 +41,7 @@
             <h3 class="collapsible-header">Persons <span class="badge" th:text="${(filteredPersons != null ? filteredPersons : persons).size()}"></span><span class="toggle-icon"></span></h3>
             <ul class="collapsible-content">
                 <li th:each="person : ${filteredPersons != null ? filteredPersons : persons}">
-                    <a th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}">
+                    <a th:href="${#strings.concat(basePath, 'persons/person_', #strings.replace(person, ' ', '_'), '.html')}">
                         <span th:text="${person}"></span>
                         <span class="badge" th:if="${counts != null and counts.containsKey(person)}" th:text="${counts.get(person)}"></span>
                     </a>
@@ -55,7 +57,7 @@
             <h3 class="collapsible-header">Categories <span class="badge" th:text="${(filteredCategories != null ? filteredCategories : categories).size()}"></span><span class="toggle-icon"></span></h3>
             <ul class="collapsible-content">
                 <li th:each="category : ${filteredCategories != null ? filteredCategories : categories}">
-                    <a th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}">
+                    <a th:href="${#strings.concat(basePath, 'categories/category_', #strings.replace(category, ' ', '_'), '.html')}">
                         <span th:text="${category}"></span>
                         <span class="badge" th:if="${counts != null and counts.containsKey(category)}" th:text="${counts.get(category)}"></span>
                     </a>
@@ -71,7 +73,7 @@
             <h3 class="collapsible-header">Years <span class="badge" th:text="${(filteredYears != null ? filteredYears : years).size()}"></span><span class="toggle-icon"></span></h3>
             <ul class="collapsible-content">
                 <li th:each="year : ${filteredYears != null ? filteredYears : years}">
-                    <a th:href="${#strings.concat(year, '.html')}">
+                    <a th:href="${#strings.concat(basePath,'years/',year, '.html')}">
                         <span th:text="${year}"></span>
                         <span class="badge" th:if="${counts != null and counts.containsKey(year)}" th:text="${counts.get(year)}"></span>
                     </a>

@@ -8,7 +8,7 @@
 <!-- Outer container to center and limit width -->
 <div class="container">
     <!-- Include Navigation Panel Fragment -->
-    <div th:replace="~{fragments/navigation :: navigation-panel(pageType=${pageType}, currentItem=${currentItem}, persons=${persons}, categories=${categories}, years=${years}, filteredPersons=${filteredPersons}, filteredCategories=${filteredCategories}, filteredYears=${filteredYears}, counts=${counts})}"></div>
+    <div th:replace="~{fragments/navigation :: navigation-panel(pageType=${pageType}, currentItem=${currentItem}, persons=${persons}, categories=${categories}, years=${years}, filteredPersons=${filteredPersons}, filteredCategories=${filteredCategories}, filteredYears=${filteredYears}, counts=${counts}, basePath=${basePath})}"></div>
 
     <!-- Content Section -->
     <div class="content">
@@ -20,14 +20,14 @@
         <div class="categories" th:if="${categories.size() > 0}">
             <span class="metadata-title">Categories:</span>
             <a class="category" th:each="category : ${categories}" 
-               th:href="${#strings.concat('category_', #strings.replace(category, ' ', '_'), '.html')}" 
+               th:href="${#strings.concat(basePath,'categories/category_', #strings.replace(category, ' ', '_'), '.html')}"
                th:text="${category}">
             </a>
         </div>
         <div class="persons" th:if="${persons.size() > 0}">
             <span class="metadata-title">Persons:</span>
             <a class="person" th:each="person : ${persons}" 
-               th:href="${#strings.concat('person_', #strings.replace(person, ' ', '_'), '.html')}" 
+               th:href="${#strings.concat(basePath, 'persons/person_', #strings.replace(person, ' ', '_'), '.html')}"
                th:text="${person}">
             </a>
         </div>

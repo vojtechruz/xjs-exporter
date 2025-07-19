@@ -12,13 +12,13 @@
             <ul class="items-list">
                 <li th:each="item : ${items}">
                     <a th:if="${itemType == 'year'}" 
-                       th:href="${#strings.concat(item, '.html')}" 
+                       th:href="${#strings.concat(basePath, 'years/',item, '.html')}"
                        th:text="${item}"></a>
                     <a th:if="${itemType == 'person'}" 
-                       th:href="${#strings.concat('person_', #strings.replace(item, ' ', '_'), '.html')}" 
+                       th:href="${#strings.concat(basePath, 'persons/person_', #strings.replace(item, ' ', '_'), '.html')}"
                        th:text="${item}"></a>
                     <a th:if="${itemType == 'category'}" 
-                       th:href="${#strings.concat('category_', #strings.replace(item, ' ', '_'), '.html')}" 
+                       th:href="${#strings.concat(basePath, 'categories/category_', #strings.replace(item, ' ', '_'), '.html')}"
                        th:text="${item}"></a>
                     <span class="badge" th:text="${counts.get(item)}"></span>
                 </li>
