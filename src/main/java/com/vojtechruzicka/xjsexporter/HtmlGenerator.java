@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class HtmlGenerator {
@@ -132,10 +134,13 @@ public class HtmlGenerator {
         
         // Setup common context variables for navigation
         setupCommonContext(context, metadata, allEntries, "entry", title, title);
-        
+
+        // Process HTML body to fix attachment URLs
+        String processedHtmlBody = processAttachmentUrls(htmlBody);
+
         // Set specific variables for the entry page
         context.setVariable("title", title);
-        context.setVariable("body", htmlBody);
+        context.setVariable("body", processedHtmlBody != null ? processedHtmlBody : htmlBody);
         context.setVariable("categories", categories);
         context.setVariable("persons", persons);
         context.setVariable("attachments", attachments);
@@ -339,4 +344,40 @@ public class HtmlGenerator {
     public String generateYearsListPage(List<Entry> allEntries, Metadata metadata) {
         return generateListPage("years", metadata, allEntries);
     }
+
+    /**
+     * Processes HTML content to replace attachment URLs containing \Attachments
+     * with the correct relative path ../attachments
+     */
+    private String processAttachmentUrls(String htmlContent) {
+        if (htmlContent == null) {
+            return null;
+        }
+
+        // Pattern to find img tags with src attributes containing \Attachments
+        Pattern pattern = Pattern.compile("(<img[^>]+src\\s*=\\s*[\"'])([^\"']*\\\\Attachments[^\"']*?)([\"'][^>]*>)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(htmlContent);
+
+        StringBuilder result = new StringBuilder();
+
+        while (matcher.find()) {
+            String beforeSrc = matcher.group(1);
+            String srcValue = matcher.group(2);
+            String afterSrc = matcher.group(3);
+
+            // Replace everything before and including \Attachments with ../attachments
+            String newSrcValue = srcValue.replaceAll(".*\\\\[Aa]ttachments\\\\", "../attachments/");
+            // Also handle forward slashes for cross-platform compatibility
+            newSrcValue = newSrcValue.replaceAll(".*/[Aa]ttachments/", "../attachments/");
+            // Normalize path separators to forward slashes
+            newSrcValue = newSrcValue.replace("\\", "/");
+
+            matcher.appendReplacement(result, beforeSrc + newSrcValue + afterSrc);
+        }
+        matcher.appendTail(result);
+
+        return result.toString();
+
+    }
+
 }
