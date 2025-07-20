@@ -1,6 +1,5 @@
 package com.vojtechruzicka.xjsexporter;
 
-import com.vojtechruzicka.xjsexporter.config.ExporterConfiguration;
 import com.vojtechruzicka.xjsexporter.model.Attachment;
 import com.vojtechruzicka.xjsexporter.model.Entry;
 import com.vojtechruzicka.xjsexporter.model.Metadata;
@@ -30,17 +29,6 @@ public class HtmlGenerator {
         this.templateEngine = templateEngine;
         czechCollator.setStrength(Collator.PRIMARY);
         this.fileService = fileService;
-    }
-
-    public static void main(String[] args) {
-
-        TemplateEngine templateEngine = new ExporterConfiguration().defaultTemplatingEngine();
-        FileService fileService = new FileService();
-        fileService.init();
-        HtmlGenerator generator = new HtmlGenerator(templateEngine, fileService);
-
-        String html = generator.generateEntryPage(null, "My Title", LocalDateTime.now(),"<h1>Hello world</h1>", List.of("CAT1", "CAT2"), List.of("PERSON1", "PERSON2", "PERSON3"), List.of(new Attachment("C:\\temp\\file.txt","ATACHMENT1","temp\\file.txt", "TXT", "application/text", 1, "1 MB")));
-        System.out.println(html);
     }
 
     private String getCssContent() {
@@ -139,26 +127,11 @@ public class HtmlGenerator {
         context.setVariable("filteredYears", allYears);
     }
 
-    public String generateEntryPage(Metadata metadata, String title, LocalDateTime created, String htmlBody, List<String> categories, List<String> persons, List<Attachment> attachments) {
-        // Create a single entry for navigation
-        Entry currentEntry = new Entry(
-            "current", // id
-            title,
-            created,
-            "", // html
-            persons,
-            categories,
-            attachments,
-            null // location
-        );
-        
-        // Create a list with just this entry for navigation
-        List<Entry> singleEntryList = List.of(currentEntry);
-        
+    public String generateEntryPage(Metadata metadata, String title, LocalDateTime created, String htmlBody, List<String> categories, List<String> persons, List<Attachment> attachments, List<Entry> allEntries) {
         Context context = new Context();
         
         // Setup common context variables for navigation
-        setupCommonContext(context, metadata, singleEntryList, "entry", title, title);
+        setupCommonContext(context, metadata, allEntries, "entry", title, title);
         
         // Set specific variables for the entry page
         context.setVariable("title", title);

@@ -1,6 +1,5 @@
 package com.vojtechruzicka.xjsexporter;
 
-import com.github.slugify.Slugify;
 import com.vojtechruzicka.xjsexporter.model.Entry;
 import com.vojtechruzicka.xjsexporter.model.Metadata;
 import com.vojtechruzicka.xjsexporter.model.json.JsonIntermediateStorage;
@@ -100,7 +99,8 @@ public class Generator {
                         entry.html(), 
                         entry.categories(), 
                         entry.persons(), 
-                        entry.attachments()
+                        entry.attachments(),
+                        finalEntries
                 );
                 
                 Files.write(
