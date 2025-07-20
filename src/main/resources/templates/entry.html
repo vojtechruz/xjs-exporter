@@ -39,15 +39,16 @@
         </div>
 
         <!-- Enhanced Attachments Section -->
-        <div class="attachments-section" th:if="${attachments.size() > 0}">
+        <div class="attachments-section" th:if="${attachments.size() > 0 || hasImageAttachments}">
             <hr>
-            <div class="attachments-header">
+            <div class="attachments-header" th:if="${nonImageAttachmentsCount > 0}">
                 <h3>Attachments</h3>
-                <span class="attachment-count" th:text="${attachments.size()} + ' file' + (${attachments.size()} > 1 ? 's' : '')">1 file</span>
+                <span class="attachment-count" th:text="${nonImageAttachmentsCount} + ' file' + (${nonImageAttachmentsCount} > 1 ? 's' : '')">1 file</span>
             </div>
 
             <div class="attachments-grid">
-                <div class="attachment-item" th:each="attachment : ${attachments}">
+                <div class="attachment-item" th:each="attachment : ${attachments}"
+                     th:if="${attachment.mimeType == null || !#strings.startsWith(attachment.mimeType, 'image/')}">
 
                     <div class="attachment-icon"
                          th:classappend="${attachment.extension != null ? 'icon-' + attachment.extension.toLowerCase() : 'icon-file'}">
@@ -87,13 +88,23 @@
             
             <!-- Image Gallery Section -->
             <div th:if="${hasImageAttachments}">
-                <h4>Image Attachments</h4>
+                <h3>Image Attachments</h3>
                 <div class="gallery-grid">
                     <div class="gallery-item" th:each="attachment : ${attachments}" 
                          th:if="${attachment.mimeType != null && #strings.startsWith(attachment.mimeType, 'image/')}">
                         <a class="gallery-link" th:href="${attachment.absoluteSourcePath}" th:data-title="${attachment.name}">
                             <img class="gallery-image" th:src="${attachment.absoluteSourcePath}" th:alt="${attachment.name}">
-                            <div class="gallery-caption" th:text="${attachment.name}">Image name</div>
+                            <div class="gallery-caption">
+                                <span class="gallery-image-name" th:text="${attachment.name}">Image name</span>
+                                <div class="gallery-actions">
+                                    <a class="btn-external"
+                                       th:href="${attachment.absoluteSourcePath}"
+                                       target="_blank"
+                                       title="Open in new tab">
+                                        🔗
+                                    </a>
+                                </div>
+                            </div>
                         </a>
                     </div>
                 </div>

@@ -75,9 +75,14 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeImageGallery();
     
     function initializeImageGallery() {
-        // Get all gallery links
-        const galleryLinks = document.querySelectorAll('.gallery-link');
-        
+        // Get all gallery links - filter to only include actual image links
+        const allGalleryLinks = document.querySelectorAll('.gallery-link');
+        const galleryLinks = Array.from(allGalleryLinks).filter(link => {
+            // Check if the link contains an image element
+            const img = link.querySelector('img.gallery-image');
+            return img !== null;
+        });
+
         if (galleryLinks.length === 0) {
             return; // No gallery links found
         }

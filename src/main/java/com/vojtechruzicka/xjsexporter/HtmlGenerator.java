@@ -169,8 +169,14 @@ public class HtmlGenerator {
         context.setVariable("dateCreated", created.toLocalDate());
         context.setVariable("basePath", BASE_PATH_SUBDIRECTORY);
 
-        boolean hasImages = attachments.stream().anyMatch(attachment -> attachment.mimeType().startsWith("image/"));
+        boolean hasImages = attachments.stream().anyMatch(attachment -> 
+            attachment.mimeType() != null && attachment.mimeType().startsWith("image/"));
         context.setVariable("hasImageAttachments", hasImages);
+        
+        // Count non-image attachments
+        long nonImageAttachmentsCount = attachments.stream().filter(attachment -> 
+            attachment.mimeType() == null || !attachment.mimeType().startsWith("image/")).count();
+        context.setVariable("nonImageAttachmentsCount", nonImageAttachmentsCount);
 
 
         return templateEngine.process("entry", context);
