@@ -516,7 +516,6 @@ hr {
 .btn-external:hover {
     background: #0d6efd;
     color: white;
-    border-color: #0d6efd;
 }
 
 /* Image Gallery Styles */
@@ -563,6 +562,12 @@ hr {
     display: block;
 }
 
+.gallery-image-name {
+    flex: 1; /* Take up all available space */
+    min-width: 0; /* Important for text overflow in flex items */
+
+}
+
 .gallery-caption {
     padding: 0.5rem;
     background: #f8f9fa;
@@ -570,21 +575,19 @@ hr {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
+    gap: 8px;
 
-.gallery-image-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
-    margin-right: 0.5rem;
+    .gallery-link {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
 
 .gallery-actions {
-    display: flex;
-    gap: 0.25rem;
     flex-shrink: 0;
 }
+
 
 .gallery-actions .btn-download,
 .gallery-actions .btn-external {

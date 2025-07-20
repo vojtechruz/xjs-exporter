@@ -92,15 +92,15 @@
                 <div class="gallery-grid">
                     <div class="gallery-item" th:each="attachment : ${attachments}" 
                          th:if="${attachment.mimeType != null && #strings.startsWith(attachment.mimeType, 'image/')}">
-                        <a class="gallery-link" th:href="${attachment.absoluteSourcePath}" th:data-title="${attachment.name}">
-                            <img class="gallery-image" th:src="${attachment.absoluteSourcePath}" th:alt="${attachment.name}">
+                        <a class="gallery-link" th:href="${basePath+'attachments/'+attachment.relativeLocation()}" th:data-title="${attachment.name}">
+                            <img class="gallery-image" th:src="${basePath+'attachments/'+attachment.relativeLocation()}" th:alt="${attachment.name}">
                             <div class="gallery-caption">
                                 <span class="gallery-image-name" th:text="${attachment.name}">Image name</span>
                                 <div class="gallery-actions">
                                     <a class="btn-external"
-                                       th:href="${attachment.absoluteSourcePath}"
+                                       th:href="${basePath+'attachments/'+attachment.relativeLocation()}"
                                        target="_blank"
-                                       title="Open in new tab">
+                                       title="Open in a new tab">
                                         🔗
                                     </a>
                                 </div>
