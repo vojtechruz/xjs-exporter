@@ -56,6 +56,20 @@ public class HtmlGenerator {
             return "/* JavaScript file not found: " + e.getMessage() + " */";
         }
     }
+    
+    /**
+     * Public method to get CSS content for use in other controllers
+     */
+    public String getPublicCssContent() {
+        return getCssContent();
+    }
+    
+    /**
+     * Public method to get JavaScript content for use in other controllers
+     */
+    public String getPublicJavaScriptContent() {
+        return getJavaScriptContent();
+    }
 
     /**
      * Sets up common context variables used across multiple templates

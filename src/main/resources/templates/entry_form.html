@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(pageTitle=${pageTitle})}">
+    <meta charset="UTF-8">
+    <title>Add New Journal Entry</title>
+</head>
+<body>
+    <div class="container">
+        <!-- Include Navigation Panel Fragment -->
+        <div th:replace="~{fragments/navigation :: navigation-panel(pageType=${pageType}, currentItem=null, persons=${persons}, categories=${categories}, years=${years}, filteredPersons=null, filteredCategories=null, filteredYears=null, counts=null, basePath=${basePath})}"></div>
+
+        <h1>Add New Journal Entry</h1>
+        
+        <!-- Success/Error Messages -->
+        <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+        <div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+        
+        <div class="form-container">
+            <form th:action="@{/entry-form}" th:object="${entryForm}" method="post">
+                <div class="form-group">
+                    <label for="title">Title *</label>
+                    <input type="text" id="title" th:field="*{title}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dateCreated">Date Created *</label>
+                    <input type="datetime-local" id="dateCreated" th:field="*{dateCreated}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" th:field="*{location}">
+                    <div class="help-text">Optional: Where this entry takes place</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="persons">Persons</label>
+                    <input type="text" id="persons" th:field="*{persons}">
+                    <div class="help-text">Comma-separated list of people mentioned in this entry</div>
+                    
+                    <!-- Existing persons suggestions -->
+                    <div class="suggestions" th:if="${not #lists.isEmpty(existingPersons)}">
+                        <div>Existing persons:</div>
+                        <div class="tag-list">
+                            <span class="tag" th:each="person : ${existingPersons}" 
+                                  th:text="${person}" 
+                                  onclick="addToField('persons', this.innerText)"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="categories">Categories</label>
+                    <input type="text" id="categories" th:field="*{categories}">
+                    <div class="help-text">Comma-separated list of categories for this entry</div>
+                    
+                    <!-- Existing categories suggestions -->
+                    <div class="suggestions" th:if="${not #lists.isEmpty(existingCategories)}">
+                        <div>Existing categories:</div>
+                        <div class="tag-list">
+                            <span class="tag" th:each="category : ${existingCategories}" 
+                                  th:text="${category}" 
+                                  onclick="addToField('categories', this.innerText)"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="content">Content *</label>
+                    <textarea id="content" th:field="*{content}" required></textarea>
+                    <div class="help-text">Enter the plaintext content of your journal entry</div>
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn-submit">Save Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Function to add a tag to a field
+        function addToField(fieldId, value) {
+            const field = document.getElementById(fieldId);
+            if (field.value.length > 0 && field.value.charAt(field.value.length - 1) !== ',') {
+                field.value += ', ';
+            } else if (field.value.length > 0) {
+                field.value += ' ';
+            }
+            field.value += value;
+        }
+        
+        // Format the datetime-local input on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('dateCreated');
+            if (dateInput.value) {
+                // Format the date to the required format for datetime-local input
+                const date = new Date(dateInput.value);
+                const formattedDate = date.toISOString().slice(0, 16);
+                dateInput.value = formattedDate;
+            }
+        });
+    </script>
+</body>
+</html>
