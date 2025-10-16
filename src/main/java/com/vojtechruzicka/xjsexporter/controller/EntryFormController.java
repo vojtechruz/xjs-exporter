@@ -108,69 +108,6 @@ public class EntryFormController {
         }
     }
 
-    /**
-     * Display the entry form
-     */
-    @GetMapping
-    public String showEntryForm(Model model) {
-        // Load existing metadata to populate dropdowns
-        try {
-            JsonIntermediateStorage.MetadataAndEntries data = jsonStorage.loadAll(intermediatePath);
-            Metadata metadata = data.metadata();
-            
-            // Get existing persons
-            List<String> existingPersons = metadata.people().values().stream()
-                    .map(PersonMetadata::getFullName)
-                    .sorted()
-                    .toList();
-            
-            // Get existing categories
-            List<String> existingCategories = metadata.categories().values().stream()
-                    .map(CategoryMetadata::title)
-                    .sorted()
-                    .toList();
-            
-            model.addAttribute("existingPersons", existingPersons);
-            model.addAttribute("existingCategories", existingCategories);
-            
-            // Add navigation attributes
-            model.addAttribute("pageType", "entry_form");
-            model.addAttribute("persons", existingPersons);
-            model.addAttribute("categories", existingCategories);
-            model.addAttribute("years", List.of()); // No years needed for the form
-            model.addAttribute("basePath", "../");
-            
-            // Add CSS and JavaScript content
-            model.addAttribute("cssContent", htmlGenerator.getPublicCssContent());
-            model.addAttribute("jsContent", htmlGenerator.getPublicJavaScriptContent());
-            model.addAttribute("pageTitle", "Add New Journal Entry");
-            
-        } catch (IOException e) {
-            log.warn("Could not load metadata: {}", e.getMessage());
-            // Continue without existing metadata
-            model.addAttribute("existingPersons", List.of());
-            model.addAttribute("existingCategories", List.of());
-            
-            // Add navigation attributes with empty lists
-            model.addAttribute("pageType", "entry_form");
-            model.addAttribute("persons", List.of());
-            model.addAttribute("categories", List.of());
-            model.addAttribute("years", List.of());
-            model.addAttribute("basePath", "../");
-            
-            // Add CSS and JavaScript content
-            model.addAttribute("cssContent", htmlGenerator.getPublicCssContent());
-            model.addAttribute("jsContent", htmlGenerator.getPublicJavaScriptContent());
-            model.addAttribute("pageTitle", "Add New Journal Entry");
-        }
-        
-        // Add empty form data
-        EntryFormData formData = new EntryFormData();
-        formData.setDateCreated(LocalDateTime.now());
-        model.addAttribute("entryForm", formData);
-        
-        return "entry_form";
-    }
 
     /**
      * Process the form submission
@@ -214,6 +151,11 @@ public class EntryFormController {
                 }
             }
             
+            // Ensure dateCreated is set if missing (static form may not supply it)
+            if (formData.getDateCreated() == null) {
+                formData.setDateCreated(LocalDateTime.now());
+            }
+
             // Create entry metadata
             EntryMetadata entryMetadata = new EntryMetadata(
                     entryId,
@@ -238,13 +180,13 @@ public class EntryFormController {
             redirectAttributes.addFlashAttribute("successMessage", 
                     "Entry saved successfully! You can now generate HTML using the 'generate' command.");
             
-            return "redirect:/entry-form";
+            return "redirect:/entry-form.html";
             
         } catch (IOException e) {
             log.error("Error saving entry: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("errorMessage", 
                     "Error saving entry: " + e.getMessage());
-            return "redirect:/entry-form";
+            return "redirect:/entry-form.html";
         }
     }
     
