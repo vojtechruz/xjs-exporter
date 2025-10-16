@@ -76,7 +76,7 @@ public class Extractor {
         for (EntryMetadata entryMetadata : metadata.entries().values()) {
             try {
                 String htmlBody = getHtmlBody(entryMetadata);
-                jsonStorage.saveEntry(finalIntermediatePath, entryMetadata, htmlBody);
+                jsonStorage.saveEntry(finalIntermediatePath, metadata, entryMetadata, htmlBody);
                 entryCount++;
             } catch (IOException e) {
                 terminal.writer().println("Could not save entry to JSON file: " + entryMetadata.id() + ", Error: " + e);

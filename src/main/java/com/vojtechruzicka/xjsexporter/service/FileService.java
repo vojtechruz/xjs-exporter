@@ -28,16 +28,21 @@ public class FileService {
 
 
     public String getEntryFileName(Entry entry) {
+        return getEntryFileName(entry.created(), entry.title());
+    }
 
-        String title = "";
-
-        String entryTitle = entry.title();
-        if(StringUtils.isNotBlank(entryTitle)) {
-            title = entryTitle.substring(0, Math.min(entryTitle.length(), 100));
+    public String getEntryFileName(java.time.LocalDateTime created, String titleRaw) {
+        String title = "untitled";
+        if (StringUtils.isNotBlank(titleRaw)) {
+            title = titleRaw.substring(0, Math.min(titleRaw.length(), 100));
         }
+        // Keep a timestamp at the beginning with date and time
+        String timestamp = created != null
+                ? created.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
+                : java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
 
-        String name = String.join("_", entry.created().toLocalDate().toString(),  title , entry.id());
-
+        String name = String.join("_", timestamp, title);
+        // Sanitize to a safe filename (lowercase, underscores, strip disallowed chars)
         return filenameSanitizer.slugify(name);
     }
 

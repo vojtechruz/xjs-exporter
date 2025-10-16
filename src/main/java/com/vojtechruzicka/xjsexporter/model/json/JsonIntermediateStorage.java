@@ -133,14 +133,30 @@ public class JsonIntermediateStorage {
      * @param htmlBody      The HTML body of the entry
      * @throws IOException If an I/O error occurs
      */
-    public void saveEntry(String basePath, EntryMetadata entryMetadata, String htmlBody) throws IOException {
+    public void saveEntry(String basePath, Metadata metadata, EntryMetadata entryMetadata, String htmlBody) throws IOException {
         Path baseDir = Path.of(basePath);
         Path entriesDir = baseDir.resolve(ENTRIES_DIR);
 
         // Use Markdown with YAML frontmatter for entries
         String filename = String.format("%s_%s.md",
                 entryMetadata.dateCreated().toLocalDate().format(DateTimeFormatter.ISO_DATE),
-                entryMetadata.id());
+                entryMetadata.title());
+
+        // Resolve person names and category titles from IDs for Markdown front matter
+        List<String> personNames = new ArrayList<>();
+        for (String pid : entryMetadata.personIds()) {
+            PersonMetadata pm = metadata.people().get(pid);
+            if (pm != null) {
+                personNames.add(pm.getFullName());
+            }
+        }
+        List<String> categoryTitles = new ArrayList<>();
+        for (String cid : entryMetadata.categoryIds()) {
+            CategoryMetadata cm = metadata.categories().get(cid);
+            if (cm != null) {
+                categoryTitles.add(cm.title());
+            }
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append("---\n");
@@ -150,8 +166,9 @@ public class JsonIntermediateStorage {
         if (entryMetadata.location() != null) {
             sb.append("location: ").append(escapeYaml(entryMetadata.location())).append("\n");
         }
-        sb.append("personIds: ").append(formatYamlList(entryMetadata.personIds())).append("\n");
-        sb.append("categoryIds: ").append(formatYamlList(entryMetadata.categoryIds())).append("\n");
+        // Store human-readable names instead of IDs in Markdown
+        sb.append("persons: ").append(formatYamlList(personNames)).append("\n");
+        sb.append("categories: ").append(formatYamlList(categoryTitles)).append("\n");
         sb.append("attachmentIds: ").append(formatYamlList(entryMetadata.attachmentIds())).append("\n");
         sb.append("source: ").append(escapeYaml(SOURCE_SYSTEM)).append("\n");
         sb.append("extractedAt: ").append(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)).append("\n");
@@ -302,6 +319,9 @@ public class JsonIntermediateStorage {
                     List<String> categoryIds;
                     List<String> attachmentIds;
                     String bodyHtml;
+                    // Optional direct names parsed from Markdown (preferred)
+                    List<String> personNamesDirect = new ArrayList<>();
+                    List<String> categoryTitlesDirect = new ArrayList<>();
 
                     if (name.endsWith(".json")) {
                         EntryJson entryJson = objectMapper.readValue(entryFile, EntryJson.class);
@@ -333,6 +353,8 @@ public class JsonIntermediateStorage {
                         personIds = md.personIds;
                         categoryIds = md.categoryIds;
                         attachmentIds = md.attachmentIds;
+                        personNamesDirect = md.personNames != null ? md.personNames : new ArrayList<>();
+                        categoryTitlesDirect = md.categoryTitles != null ? md.categoryTitles : new ArrayList<>();
                         bodyHtml = md.body; // stored body as HTML inside markdown body
                     }
 
@@ -350,22 +372,30 @@ public class JsonIntermediateStorage {
 
                     // Create Entry
                     List<String> persons = new ArrayList<>();
-                    for (String personId : personIds) {
-                        PersonMetadata personMetadata = personMap.get(personId);
-                        if (personMetadata != null) {
-                            persons.add(personMetadata.getFullName());
-                        } else {
-                            log.warn("Unknown person ID '{}' in entry: {}", personId, id);
+                    if (personNamesDirect != null && !personNamesDirect.isEmpty()) {
+                        persons.addAll(personNamesDirect);
+                    } else {
+                        for (String personId : personIds) {
+                            PersonMetadata personMetadata = personMap.get(personId);
+                            if (personMetadata != null) {
+                                persons.add(personMetadata.getFullName());
+                            } else {
+                                log.warn("Unknown person ID '{}' in entry: {}", personId, id);
+                            }
                         }
                     }
 
                     List<String> categoryTitles = new ArrayList<>();
-                    for (String categoryId : categoryIds) {
-                        CategoryMetadata categoryMetadata = categoryMap.get(categoryId);
-                        if (categoryMetadata != null) {
-                            categoryTitles.add(categoryMetadata.title());
-                        } else {
-                            log.warn("Unknown category ID '{}' in entry: {}", categoryId, id);
+                    if (categoryTitlesDirect != null && !categoryTitlesDirect.isEmpty()) {
+                        categoryTitles.addAll(categoryTitlesDirect);
+                    } else {
+                        for (String categoryId : categoryIds) {
+                            CategoryMetadata categoryMetadata = categoryMap.get(categoryId);
+                            if (categoryMetadata != null) {
+                                categoryTitles.add(categoryMetadata.title());
+                            } else {
+                                log.warn("Unknown category ID '{}' in entry: {}", categoryId, id);
+                            }
                         }
                     }
 
@@ -502,8 +532,10 @@ public class JsonIntermediateStorage {
                     if (!v.isEmpty()) list.add(v);
                 }
                 switch (key) {
-                    case "personIds" -> md.personIds = list;
-                    case "categoryIds" -> md.categoryIds = list;
+                    case "personIds" -> md.personIds = list; // legacy
+                    case "categoryIds" -> md.categoryIds = list; // legacy
+                    case "persons" -> md.personNames = list; // new preferred
+                    case "categories" -> md.categoryTitles = list; // new preferred
                     case "attachmentIds" -> md.attachmentIds = list;
                     default -> {}
                 }
@@ -532,8 +564,12 @@ public class JsonIntermediateStorage {
         String title;
         LocalDateTime dateCreated;
         String location;
+        // Legacy ID lists for backward compatibility
         List<String> personIds = new ArrayList<>();
         List<String> categoryIds = new ArrayList<>();
+        // New name/title lists preferred going forward
+        List<String> personNames = new ArrayList<>();
+        List<String> categoryTitles = new ArrayList<>();
         List<String> attachmentIds = new ArrayList<>();
         String body;
     }
