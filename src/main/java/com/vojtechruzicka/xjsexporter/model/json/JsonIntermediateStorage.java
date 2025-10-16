@@ -169,6 +169,16 @@ public class JsonIntermediateStorage {
         // Store human-readable names instead of IDs in Markdown
         sb.append("persons: ").append(formatYamlList(personNames)).append("\n");
         sb.append("categories: ").append(formatYamlList(categoryTitles)).append("\n");
+        // New preferred: attachment names (filenames) for easier HTML generation
+        List<String> attachmentNames = new ArrayList<>();
+        for (String aid : entryMetadata.attachmentIds()) {
+            AttachmentMetadata am = metadata.attachments().get(aid);
+            if (am != null) {
+                attachmentNames.add(am.name());
+            }
+        }
+        sb.append("attachments: ").append(formatYamlList(attachmentNames)).append("\n");
+        // Legacy fallback retained for backward compatibility
         sb.append("attachmentIds: ").append(formatYamlList(entryMetadata.attachmentIds())).append("\n");
         sb.append("source: ").append(escapeYaml(SOURCE_SYSTEM)).append("\n");
         sb.append("extractedAt: ").append(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)).append("\n");
@@ -290,13 +300,18 @@ public class JsonIntermediateStorage {
         }
 
         Map<String, AttachmentMetadata> attachmentMap = new HashMap<>();
+        Map<String, AttachmentMetadata> attachmentByName = new HashMap<>();
         for (AttachmentJson attachment : attachments) {
-            attachmentMap.put(attachment.id(), new AttachmentMetadata(
+            AttachmentMetadata am = new AttachmentMetadata(
                     attachment.id(),
                     attachment.absoluteSourcePath(),
                     attachment.name(),
                     attachment.relativeLocation()
-            ));
+            );
+            attachmentMap.put(attachment.id(), am);
+            if (attachment.name() != null && !attachment.name().isEmpty()) {
+                attachmentByName.put(attachment.name(), am);
+            }
         }
 
         // Load entries
@@ -322,6 +337,7 @@ public class JsonIntermediateStorage {
                     // Optional direct names parsed from Markdown (preferred)
                     List<String> personNamesDirect = new ArrayList<>();
                     List<String> categoryTitlesDirect = new ArrayList<>();
+                    List<String> attachmentNamesDirect = new ArrayList<>();
 
                     if (name.endsWith(".json")) {
                         EntryJson entryJson = objectMapper.readValue(entryFile, EntryJson.class);
@@ -355,6 +371,7 @@ public class JsonIntermediateStorage {
                         attachmentIds = md.attachmentIds;
                         personNamesDirect = md.personNames != null ? md.personNames : new ArrayList<>();
                         categoryTitlesDirect = md.categoryTitles != null ? md.categoryTitles : new ArrayList<>();
+                        attachmentNamesDirect = md.attachmentNames != null ? md.attachmentNames : new ArrayList<>();
                         bodyHtml = md.body; // stored body as HTML inside markdown body
                     }
 
@@ -400,12 +417,23 @@ public class JsonIntermediateStorage {
                     }
 
                     List<com.vojtechruzicka.xjsexporter.model.Attachment> entryAttachments = new ArrayList<>();
-                    for (String attachmentId : attachmentIds) {
-                        AttachmentMetadata attachmentMetadata = attachmentMap.get(attachmentId);
-                        if (attachmentMetadata != null) {
-                            entryAttachments.add(fileService.getAttachmentFromMetadata(attachmentMetadata));
-                        } else {
-                            log.warn("Unknown attachment ID '{}' in entry: {}", attachmentId, id);
+                    if (attachmentNamesDirect != null && !attachmentNamesDirect.isEmpty()) {
+                        for (String fname : attachmentNamesDirect) {
+                            AttachmentMetadata attachmentMetadata = attachmentByName.get(fname);
+                            if (attachmentMetadata != null) {
+                                entryAttachments.add(fileService.getAttachmentFromMetadata(attachmentMetadata));
+                            } else {
+                                log.warn("Unknown attachment filename '{}' in entry: {}", fname, id);
+                            }
+                        }
+                    } else {
+                        for (String attachmentId : attachmentIds) {
+                            AttachmentMetadata attachmentMetadata = attachmentMap.get(attachmentId);
+                            if (attachmentMetadata != null) {
+                                entryAttachments.add(fileService.getAttachmentFromMetadata(attachmentMetadata));
+                            } else {
+                                log.warn("Unknown attachment ID '{}' in entry: {}", attachmentId, id);
+                            }
                         }
                     }
 
@@ -537,6 +565,7 @@ public class JsonIntermediateStorage {
                     case "persons" -> md.personNames = list; // new preferred
                     case "categories" -> md.categoryTitles = list; // new preferred
                     case "attachmentIds" -> md.attachmentIds = list;
+                    case "attachments" -> md.attachmentNames = list; // new preferred
                     default -> {}
                 }
             } else {
@@ -570,6 +599,7 @@ public class JsonIntermediateStorage {
         // New name/title lists preferred going forward
         List<String> personNames = new ArrayList<>();
         List<String> categoryTitles = new ArrayList<>();
+        List<String> attachmentNames = new ArrayList<>();
         List<String> attachmentIds = new ArrayList<>();
         String body;
     }
