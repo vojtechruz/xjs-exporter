@@ -20,8 +20,6 @@
                 <strong th:if="${pageType == 'categories_list'}">Categories List</strong></li>
             <li><a th:if="${pageType != 'years_list'}" th:href="${#strings.concat(basePath, 'lists/years_list.html')}">Years List</a>
                 <strong th:if="${pageType == 'years_list'}">Years List</strong></li>
-            <li><a th:if="${pageType != 'entry_form'}" href="/entry-form">Add New Entry</a>
-                <strong th:if="${pageType == 'entry_form'}">Add New Entry</strong></li>
         </ul>
 
         <!-- Current filter info -->
