@@ -115,14 +115,19 @@ public class Generator {
             }
         });
 
-        // Copy attachment files
+        // Copy attachment files - prefer intermediate storage copies
         metadata.attachments().values().forEach(attachmentMetadata -> {
             try {
                 Path target = Path.of(finalTargetPath + "attachments" + File.separator + attachmentMetadata.name());
                 Files.createDirectories(target.getParent());
-                Files.copy(Path.of(attachmentMetadata.absoluteSourcePath()), target, StandardCopyOption.REPLACE_EXISTING);
+
+                Path intermediateSource = Path.of(finalIntermediatePath + "attachments" + File.separator + attachmentMetadata.name());
+                Path originalSource = Path.of(attachmentMetadata.absoluteSourcePath());
+
+                Path sourceToUse = Files.exists(intermediateSource) ? intermediateSource : originalSource;
+                Files.copy(sourceToUse, target, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
-                terminal.writer().println("Could not copy attachment file: " + attachmentMetadata.absoluteSourcePath() + ", Error: " + e);
+                terminal.writer().println("Could not copy attachment file for: " + attachmentMetadata.name() + ", Error: " + e);
             }
         });
 

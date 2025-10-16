@@ -36,6 +36,7 @@ public class JsonIntermediateStorage {
 
     private static final String ENTRIES_DIR = "entries";
     private static final String METADATA_DIR = "metadata";
+    private static final String ATTACHMENTS_DIR = "attachments";
     private static final String PEOPLE_FILE = "people.json";
     private static final String CATEGORIES_FILE = "categories.json";
     private static final String ATTACHMENTS_FILE = "attachments.json";
@@ -64,9 +65,11 @@ public class JsonIntermediateStorage {
         Path baseDir = Path.of(basePath);
         Path entriesDir = baseDir.resolve(ENTRIES_DIR);
         Path metadataDir = baseDir.resolve(METADATA_DIR);
+        Path attachmentsDir = baseDir.resolve(ATTACHMENTS_DIR);
 
         Files.createDirectories(entriesDir);
         Files.createDirectories(metadataDir);
+        Files.createDirectories(attachmentsDir);
     }
 
     /**
@@ -79,6 +82,11 @@ public class JsonIntermediateStorage {
     public void saveMetadata(String basePath, Metadata metadata) throws IOException {
         Path baseDir = Path.of(basePath);
         Path metadataDir = baseDir.resolve(METADATA_DIR);
+        Path attachmentsDir = baseDir.resolve(ATTACHMENTS_DIR);
+
+        // Ensure directories exist
+        Files.createDirectories(metadataDir);
+        Files.createDirectories(attachmentsDir);
 
         // Save people.json
         List<PersonJson> people = metadata.people().values().stream()
@@ -97,6 +105,24 @@ public class JsonIntermediateStorage {
                 .map(this::convertToAttachmentJson)
                 .collect(Collectors.toList());
         objectMapper.writeValue(metadataDir.resolve(ATTACHMENTS_FILE).toFile(), attachments);
+
+        // Copy attachment files into intermediate storage
+        metadata.attachments().values().forEach(att -> {
+            try {
+                if (att.absoluteSourcePath() != null && !att.absoluteSourcePath().isEmpty()) {
+                    Path source = Path.of(att.absoluteSourcePath());
+                    if (Files.exists(source)) {
+                        Path target = attachmentsDir.resolve(att.name());
+                        Files.createDirectories(target.getParent());
+                        Files.copy(source, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    } else {
+                        log.warn("Attachment source file does not exist: {}", source);
+                    }
+                }
+            } catch (IOException e) {
+                log.error("Failed to copy attachment '{}' to intermediate storage: {}", att.name(), e.getMessage());
+            }
+        });
     }
 
     /**

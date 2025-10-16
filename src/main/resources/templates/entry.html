@@ -58,7 +58,7 @@
 
                     <div class="attachment-info">
                         <a class="attachment-name"
-                           th:href="${attachment.absoluteSourcePath}"
+                           th:href="${basePath+'attachments/'+attachment.relativeLocation()}"
                            th:text="${attachment.name}"
                            target="_blank"
                            rel="noopener noreferrer">filename.pdf</a>
@@ -71,13 +71,13 @@
 
                     <div class="attachment-actions">
                         <a class="btn-download"
-                           th:href="${attachment.absoluteSourcePath}"
+                           th:href="${basePath+'attachments/'+attachment.relativeLocation()}"
                            download
                            title="Download file">
                             📥
                         </a>
                         <a class="btn-external"
-                           th:href="${attachment.absoluteSourcePath}"
+                           th:href="${basePath+'attachments/'+attachment.relativeLocation()}"
                            target="_blank"
                            title="Open in new tab">
                             🔗
