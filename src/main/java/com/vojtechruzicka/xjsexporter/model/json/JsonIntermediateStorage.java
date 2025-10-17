@@ -138,7 +138,7 @@ public class JsonIntermediateStorage {
         Path entriesDir = baseDir.resolve(ENTRIES_DIR);
 
         // Use Markdown with YAML frontmatter for entries
-        String filename = fileService.getEntryFileName(entryMetadata.dateCreated(), entryMetadata.title());
+        String filename = fileService.getEntryFileName(entryMetadata.dateCreated(), entryMetadata.title())+".md";
 
         // Resolve person names and category titles from IDs for Markdown front matter
         List<String> personNames = new ArrayList<>();
@@ -225,240 +225,129 @@ public class JsonIntermediateStorage {
         Path baseDir = Path.of(basePath);
         Path entriesDir = baseDir.resolve(ENTRIES_DIR);
         Path metadataDir = baseDir.resolve(METADATA_DIR);
+        Path attachmentsDir = baseDir.resolve(ATTACHMENTS_DIR);
 
-        // Validate directory structure
+        // Validate directory structure (Markdown-only mode)
         validateDirectoryStructure(baseDir, entriesDir, metadataDir);
 
-        // Load manifest
-        ManifestJson manifest;
-        try {
-            manifest = objectMapper.readValue(
-                    baseDir.resolve(MANIFEST_FILE).toFile(),
-                    ManifestJson.class
-            );
-            log.info("Loaded manifest: {} entries, {} people, {} categories, {} attachments",
-                    manifest.entryCount(), manifest.personCount(), manifest.categoryCount(), manifest.attachmentCount());
-        } catch (IOException e) {
-            throw new IOException("Failed to load manifest.json: " + e.getMessage(), e);
-        }
-
-        // Load people
-        List<PersonJson> people;
-        try {
-            people = objectMapper.readValue(
-                    metadataDir.resolve(PEOPLE_FILE).toFile(),
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, PersonJson.class)
-            );
-            log.info("Loaded {} people from people.json", people.size());
-        } catch (IOException e) {
-            throw new IOException("Failed to load people.json: " + e.getMessage(), e);
-        }
-
-        // Load categories
-        List<CategoryJson> categories;
-        try {
-            categories = objectMapper.readValue(
-                    metadataDir.resolve(CATEGORIES_FILE).toFile(),
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, CategoryJson.class)
-            );
-            log.info("Loaded {} categories from categories.json", categories.size());
-        } catch (IOException e) {
-            throw new IOException("Failed to load categories.json: " + e.getMessage(), e);
-        }
-
-        // Load attachments
-        List<AttachmentJson> attachments;
-        try {
-            attachments = objectMapper.readValue(
-                    metadataDir.resolve(ATTACHMENTS_FILE).toFile(),
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, AttachmentJson.class)
-            );
-            log.info("Loaded {} attachments from attachments.json", attachments.size());
-        } catch (IOException e) {
-            throw new IOException("Failed to load attachments.json: " + e.getMessage(), e);
-        }
-
-        // Convert to metadata
+        // Prepare metadata holders built purely from Markdown and filesystem
         Map<String, PersonMetadata> personMap = new HashMap<>();
-        for (PersonJson person : people) {
-            personMap.put(person.id(), new PersonMetadata(
-                    person.id(),
-                    person.firstName(),
-                    person.lastName(),
-                    person.nickName()
-            ));
-        }
-
         Map<String, CategoryMetadata> categoryMap = new HashMap<>();
-        for (CategoryJson category : categories) {
-            categoryMap.put(category.id(), new CategoryMetadata(
-                    category.id(),
-                    category.title()
-            ));
-        }
-
         Map<String, AttachmentMetadata> attachmentMap = new HashMap<>();
-        Map<String, AttachmentMetadata> attachmentByName = new HashMap<>();
-        for (AttachmentJson attachment : attachments) {
-            AttachmentMetadata am = new AttachmentMetadata(
-                    attachment.id(),
-                    attachment.absoluteSourcePath(),
-                    attachment.name(),
-                    attachment.relativeLocation()
-            );
-            attachmentMap.put(attachment.id(), am);
-            if (attachment.name() != null && !attachment.name().isEmpty()) {
-                attachmentByName.put(attachment.name(), am);
-            }
-        }
 
-        // Load entries
+        // Load entries from Markdown
         List<Entry> entries = new ArrayList<>();
         Map<String, EntryMetadata> entryMetadataMap = new HashMap<>();
 
-        File[] entryFiles = entriesDir.toFile().listFiles((dir, name) -> name.endsWith(".json") || name.endsWith(".md"));
-        if (entryFiles != null) {
-            int successCount = 0;
-            int errorCount = 0;
-            
-            for (File entryFile : entryFiles) {
-                try {
-                    String name = entryFile.getName().toLowerCase();
-                    String id;
-                    String title;
-                    LocalDateTime created;
-                    String location;
-                    List<String> personIds;
-                    List<String> categoryIds;
-                    List<String> attachmentIds;
-                    String bodyHtml;
-                    // Optional direct names parsed from Markdown (preferred)
-                    List<String> personNamesDirect = new ArrayList<>();
-                    List<String> categoryTitlesDirect = new ArrayList<>();
-                    List<String> attachmentNamesDirect = new ArrayList<>();
+        File[] entryFiles = entriesDir.toFile().listFiles((dir, name) -> name.toLowerCase().endsWith(".md"));
+        if (entryFiles == null || entryFiles.length == 0) {
+            throw new IOException("No Markdown entry files found in: " + entriesDir);
+        }
 
-                    if (name.endsWith(".json")) {
-                        EntryJson entryJson = objectMapper.readValue(entryFile, EntryJson.class);
-                        // Validate
-                        if (entryJson.id() == null || entryJson.id().isEmpty() || entryJson.dateCreated() == null) {
-                            log.warn("Skipping invalid entry JSON in file: {}", entryFile.getName());
-                            errorCount++;
-                            continue;
-                        }
-                        id = entryJson.id();
-                        title = entryJson.title();
-                        created = entryJson.dateCreated();
-                        location = entryJson.location();
-                        personIds = entryJson.personIds();
-                        categoryIds = entryJson.categoryIds();
-                        attachmentIds = entryJson.attachmentIds();
-                        bodyHtml = entryJson.htmlBody();
-                    } else { // .md
-                        MdEntry md = parseMarkdownEntry(entryFile.toPath());
-                        if (md == null || md.id == null || md.id.isEmpty() || md.dateCreated == null) {
-                            log.warn("Skipping invalid entry Markdown in file: {}", entryFile.getName());
-                            errorCount++;
-                            continue;
-                        }
-                        id = md.id;
-                        title = md.title;
-                        created = md.dateCreated;
-                        location = md.location;
-                        personIds = md.personIds;
-                        categoryIds = md.categoryIds;
-                        attachmentIds = md.attachmentIds;
-                        personNamesDirect = md.personNames != null ? md.personNames : new ArrayList<>();
-                        categoryTitlesDirect = md.categoryTitles != null ? md.categoryTitles : new ArrayList<>();
-                        attachmentNamesDirect = md.attachmentNames != null ? md.attachmentNames : new ArrayList<>();
-                        bodyHtml = md.body; // stored body as HTML inside markdown body
-                    }
+        int successCount = 0;
+        int errorCount = 0;
 
-                    // Create EntryMetadata
-                    EntryMetadata entryMetadata = new EntryMetadata(
-                            id,
-                            title,
-                            location,
-                            created,
-                            attachmentIds,
-                            categoryIds,
-                            personIds
-                    );
-                    entryMetadataMap.put(id, entryMetadata);
-
-                    // Create Entry
-                    List<String> persons = new ArrayList<>();
-                    if (personNamesDirect != null && !personNamesDirect.isEmpty()) {
-                        persons.addAll(personNamesDirect);
-                    } else {
-                        for (String personId : personIds) {
-                            PersonMetadata personMetadata = personMap.get(personId);
-                            if (personMetadata != null) {
-                                persons.add(personMetadata.getFullName());
-                            } else {
-                                log.warn("Unknown person ID '{}' in entry: {}", personId, id);
-                            }
-                        }
-                    }
-
-                    List<String> categoryTitles = new ArrayList<>();
-                    if (categoryTitlesDirect != null && !categoryTitlesDirect.isEmpty()) {
-                        categoryTitles.addAll(categoryTitlesDirect);
-                    } else {
-                        for (String categoryId : categoryIds) {
-                            CategoryMetadata categoryMetadata = categoryMap.get(categoryId);
-                            if (categoryMetadata != null) {
-                                categoryTitles.add(categoryMetadata.title());
-                            } else {
-                                log.warn("Unknown category ID '{}' in entry: {}", categoryId, id);
-                            }
-                        }
-                    }
-
-                    List<com.vojtechruzicka.xjsexporter.model.Attachment> entryAttachments = new ArrayList<>();
-                    if (attachmentNamesDirect != null && !attachmentNamesDirect.isEmpty()) {
-                        for (String fname : attachmentNamesDirect) {
-                            AttachmentMetadata attachmentMetadata = attachmentByName.get(fname);
-                            if (attachmentMetadata != null) {
-                                entryAttachments.add(fileService.getAttachmentFromMetadata(attachmentMetadata));
-                            } else {
-                                log.warn("Unknown attachment filename '{}' in entry: {}", fname, id);
-                            }
-                        }
-                    } else {
-                        for (String attachmentId : attachmentIds) {
-                            AttachmentMetadata attachmentMetadata = attachmentMap.get(attachmentId);
-                            if (attachmentMetadata != null) {
-                                entryAttachments.add(fileService.getAttachmentFromMetadata(attachmentMetadata));
-                            } else {
-                                log.warn("Unknown attachment ID '{}' in entry: {}", attachmentId, id);
-                            }
-                        }
-                    }
-
-                    Entry entry = new Entry(
-                            id,
-                            title,
-                            created,
-                            bodyHtml,
-                            persons,
-                            categoryTitles,
-                            entryAttachments,
-                            location
-                    );
-
-                    entries.add(entry);
-                    successCount++;
-                } catch (Exception e) {
-                    log.error("Error loading entry from file {}: {}", entryFile.getName(), e.getMessage());
+        for (File entryFile : entryFiles) {
+            try {
+                MdEntry md = parseMarkdownEntry(entryFile.toPath());
+                if (md == null || md.id == null || md.id.isEmpty() || md.dateCreated == null) {
+                    log.warn("Skipping invalid entry Markdown in file: {}", entryFile.getName());
                     errorCount++;
+                    continue;
                 }
+
+                String id = md.id;
+                String title = md.title;
+                LocalDateTime created = md.dateCreated;
+                String location = md.location;
+                List<String> personNames = (md.personNames != null && !md.personNames.isEmpty()) ? md.personNames : md.personIds;
+                List<String> categoryTitles = (md.categoryTitles != null && !md.categoryTitles.isEmpty()) ? md.categoryTitles : md.categoryIds;
+                List<String> attachmentNames = (md.attachmentNames != null && !md.attachmentNames.isEmpty()) ? md.attachmentNames : md.attachmentIds;
+                String bodyHtml = md.body;
+
+                // Build/ensure people metadata
+                List<String> personIdsForMeta = new ArrayList<>();
+                for (String name : personNames) {
+                    if (name == null || name.isBlank()) continue;
+                    String personId = name; // use full name as ID to avoid JSON dep
+                    if (!personMap.containsKey(personId)) {
+                        String first = name;
+                        String last = "";
+                        int space = name.lastIndexOf(' ');
+                        if (space > 0) {
+                            first = name.substring(0, space).trim();
+                            last = name.substring(space + 1).trim();
+                        }
+                        personMap.put(personId, new PersonMetadata(personId, first, last, null));
+                    }
+                    personIdsForMeta.add(personId);
+                }
+
+                // Build/ensure category metadata
+                List<String> categoryIdsForMeta = new ArrayList<>();
+                for (String cat : categoryTitles) {
+                    if (cat == null || cat.isBlank()) continue;
+                    String categoryId = cat; // use title as ID
+                    categoryMap.putIfAbsent(categoryId, new CategoryMetadata(categoryId, cat));
+                    categoryIdsForMeta.add(categoryId);
+                }
+
+                // Resolve attachments for the entry
+                List<String> attachmentIdsForMeta = new ArrayList<>();
+                List<com.vojtechruzicka.xjsexporter.model.Attachment> entryAttachments = new ArrayList<>();
+                for (String fname : attachmentNames) {
+                    if (fname == null || fname.isBlank()) continue;
+
+
+                    // Try to resolve by creating metadata pointing to attachments dir
+                    Path p = attachmentsDir.resolve(fname);
+                    AttachmentMetadata am = new AttachmentMetadata(
+                            fname,
+                            p.toFile().getAbsolutePath(),
+                            fname,
+                            fname
+                    );
+                    attachmentMap.put(fname, am);
+
+                    attachmentIdsForMeta.add(am.id());
+                    entryAttachments.add(fileService.getAttachmentFromMetadata(am));
+                }
+
+                // Create and store EntryMetadata (IDs are names we used as IDs)
+                EntryMetadata entryMetadata = new EntryMetadata(
+                        id,
+                        title,
+                        location,
+                        created,
+                        attachmentIdsForMeta,
+                        categoryIdsForMeta,
+                        personIdsForMeta
+                );
+                entryMetadataMap.put(id, entryMetadata);
+
+                // Create entry model with resolved names and attachments
+                Entry entry = new Entry(
+                        id,
+                        title,
+                        created,
+                        bodyHtml,
+                        personNames,
+                        categoryTitles,
+                        entryAttachments,
+                        location
+                );
+                entries.add(entry);
+                successCount++;
+            } catch (Exception e) {
+                log.error("Error loading entry from file {}: {}", entryFile.getName(), e.getMessage());
+                errorCount++;
             }
-            
-            log.info("Loaded {} entries successfully, {} entries with errors", successCount, errorCount);
-            
-            if (entries.isEmpty()) {
-                throw new IOException("No entries could be loaded successfully from " + entriesDir);
-            }
+        }
+
+        log.info("Loaded {} entries successfully, {} entries with errors", successCount, errorCount);
+
+        if (entries.isEmpty()) {
+            throw new IOException("No entries could be loaded successfully from " + entriesDir);
         }
 
         Metadata reconstructedMetadata = new Metadata(personMap, categoryMap, attachmentMap, entryMetadataMap);
@@ -546,17 +435,9 @@ public class JsonIntermediateStorage {
             String key = line.substring(0, colon).trim();
             String rawVal = line.substring(colon + 1).trim();
             if (rawVal.startsWith("[")) {
-                // bracketed list
+                // bracketed list - parse properly respecting quoted strings
                 String inner = rawVal.substring(1, rawVal.endsWith("]") ? rawVal.length() - 1 : rawVal.length());
-                List<String> list = new ArrayList<>();
-                for (String part : inner.split(",")) {
-                    String v = part.trim();
-                    if (v.startsWith("\"") && v.endsWith("\"")) {
-                        v = v.substring(1, v.length() - 1);
-                    }
-                    v = v.replace("\\\"", "\"").replace("\\\\", "\\");
-                    if (!v.isEmpty()) list.add(v);
-                }
+                List<String> list = parseYamlArray(inner);
                 switch (key) {
                     case "personIds" -> md.personIds = list; // legacy
                     case "categoryIds" -> md.categoryIds = list; // legacy
@@ -571,7 +452,8 @@ public class JsonIntermediateStorage {
                 if (v.startsWith("\"") && v.endsWith("\"")) {
                     v = v.substring(1, v.length() - 1);
                 }
-                v = v.replace("\\\"", "\"").replace("\\\\", "\\");
+                // Unescape in correct order: backslashes FIRST, then quotes
+                v = v.replace("\\\\", "\\").replace("\\\"", "\"");
                 switch (key) {
                     case "id" -> md.id = v;
                     case "title" -> md.title = v;
@@ -584,6 +466,71 @@ public class JsonIntermediateStorage {
             }
         }
         return md;
+    }
+
+    /**
+     * Parses a YAML array string, properly handling quoted strings with commas and escaped characters.
+     *
+     * @param arrayContent The content inside the brackets, e.g., '"item1", "item2, with comma"'
+     * @return List of unescaped string values
+     */
+    private List<String> parseYamlArray(String arrayContent) {
+        List<String> result = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean inQuotes = false;
+        boolean escaped = false;
+
+        for (int i = 0; i < arrayContent.length(); i++) {
+            char c = arrayContent.charAt(i);
+
+            if (escaped) {
+                // Handle escaped character
+                current.append(c);
+                escaped = false;
+            } else if (c == '\\') {
+                // Start escape sequence
+                escaped = true;
+                current.append(c);
+            } else if (c == '"') {
+                // Toggle quote state
+                inQuotes = !inQuotes;
+                current.append(c);
+            } else if (c == ',' && !inQuotes) {
+                // Comma outside quotes = separator
+                String value = current.toString().trim();
+                if (!value.isEmpty()) {
+                    result.add(unescapeYamlValue(value));
+                }
+                current = new StringBuilder();
+            } else {
+                current.append(c);
+            }
+        }
+
+        // Don't forget the last item
+        String value = current.toString().trim();
+        if (!value.isEmpty()) {
+            result.add(unescapeYamlValue(value));
+        }
+
+        return result;
+    }
+
+    /**
+     * Unescapes a YAML value by removing quotes and unescaping special characters.
+     *
+     * @param value The value to unescape
+     * @return The unescaped value
+     */
+    private String unescapeYamlValue(String value) {
+        String v = value.trim();
+        // Remove surrounding quotes
+        if (v.startsWith("\"") && v.endsWith("\"") && v.length() >= 2) {
+            v = v.substring(1, v.length() - 1);
+        }
+        // Unescape in correct order: backslashes FIRST, then quotes
+        v = v.replace("\\\\", "\u0000").replace("\\\"", "\"").replace("\u0000", "\\");
+        return v;
     }
 
     private static class MdEntry {
@@ -603,45 +550,28 @@ public class JsonIntermediateStorage {
     }
 
     private void validateDirectoryStructure(Path baseDir, Path entriesDir, Path metadataDir) throws IOException {
-        // Check if base directory exists
+        // Base directory must exist
         if (!Files.exists(baseDir)) {
             throw new IOException("Intermediate data directory does not exist: " + baseDir);
         }
-        
-        // Check if entries directory exists
+
+        // Entries directory must exist
         if (!Files.exists(entriesDir)) {
             throw new IOException("Entries directory does not exist: " + entriesDir);
         }
-        
-        // Check if metadata directory exists
+
+        // Metadata directory is optional in Markdown-only mode; do not enforce
         if (!Files.exists(metadataDir)) {
-            throw new IOException("Metadata directory does not exist: " + metadataDir);
+            // create it to keep downstream code safe if needed
+            Files.createDirectories(metadataDir);
         }
-        
-        // Check if manifest file exists
-        if (!Files.exists(baseDir.resolve(MANIFEST_FILE))) {
-            throw new IOException("Manifest file does not exist: " + baseDir.resolve(MANIFEST_FILE));
-        }
-        
-        // Check if people file exists
-        if (!Files.exists(metadataDir.resolve(PEOPLE_FILE))) {
-            throw new IOException("People file does not exist: " + metadataDir.resolve(PEOPLE_FILE));
-        }
-        
-        // Check if categories file exists
-        if (!Files.exists(metadataDir.resolve(CATEGORIES_FILE))) {
-            throw new IOException("Categories file does not exist: " + metadataDir.resolve(CATEGORIES_FILE));
-        }
-        
-        // Check if attachments file exists
-        if (!Files.exists(metadataDir.resolve(ATTACHMENTS_FILE))) {
-            throw new IOException("Attachments file does not exist: " + metadataDir.resolve(ATTACHMENTS_FILE));
-        }
-        
-        // Check if entries directory has any files
+
+        // No manifest or metadata JSON required in Markdown-only mode
+
+        // Ensure there is at least one Markdown entry file
         try (var files = Files.list(entriesDir)) {
-            if (files.noneMatch(path -> path.toString().endsWith(".json") || path.toString().endsWith(".md"))) {
-                throw new IOException("No entry files found in: " + entriesDir);
+            if (files.noneMatch(path -> path.toString().toLowerCase().endsWith(".md"))) {
+                throw new IOException("No Markdown entry files found in: " + entriesDir);
             }
         }
     }
