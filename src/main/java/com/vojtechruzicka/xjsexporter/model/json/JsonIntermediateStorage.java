@@ -415,7 +415,7 @@ public class JsonIntermediateStorage {
 
     private MdEntry parseMarkdownEntry(Path path) throws IOException {
         String content = Files.readString(path);
-        String fmStart = "---\n";
+        String fmStart = "---";
         if (!content.startsWith(fmStart)) {
             return null;
         }
