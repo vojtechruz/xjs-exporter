@@ -44,7 +44,7 @@ public class Generator {
 
     @ShellMethod(value = "Generates HTML output from intermediate JSON files", key = "generate")
     public String generate(
-            @ShellOption(defaultValue = "C:\\projects\\xjs-exporter\\intermediate-data\\", 
+            @ShellOption(defaultValue = "D:\\Dropbox\\_INBOX\\_DENIK_TRANSFER\\OUT - Markdown\\intermediate-data",
                     help = "Source directory containing intermediate JSON files") String intermediatePath,
             @ShellOption(defaultValue = "C:\\projects\\xjs-exporter\\OUT\\", 
                     help = "Target directory for generated HTML files") String targetPath) {

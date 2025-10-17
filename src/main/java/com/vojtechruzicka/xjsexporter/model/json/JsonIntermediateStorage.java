@@ -138,9 +138,7 @@ public class JsonIntermediateStorage {
         Path entriesDir = baseDir.resolve(ENTRIES_DIR);
 
         // Use Markdown with YAML frontmatter for entries
-        String filename = String.format("%s_%s.md",
-                entryMetadata.dateCreated().toLocalDate().format(DateTimeFormatter.ISO_DATE),
-                entryMetadata.title());
+        String filename = fileService.getEntryFileName(entryMetadata.dateCreated(), entryMetadata.title());
 
         // Resolve person names and category titles from IDs for Markdown front matter
         List<String> personNames = new ArrayList<>();
